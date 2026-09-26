@@ -14,7 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      curations: {
+        Row: {
+          created_at: string
+          id: string
+          phone: string | null
+          price_inr: number
+          summary: Json
+          user_id: string
+          was_free: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          phone?: string | null
+          price_inr?: number
+          summary?: Json
+          user_id: string
+          was_free?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          phone?: string | null
+          price_inr?: number
+          summary?: Json
+          user_id?: string
+          was_free?: boolean
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
