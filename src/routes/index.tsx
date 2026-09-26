@@ -88,7 +88,7 @@ function Home() {
     say(r.reply);
     return {
       ...b,
-      intent: b.intent ?? r.intent,
+      intent: b.intent ?? (r.intent === "food" ? "food" : null),
       spend: b.spend || r.spend || "",
       company: b.company || r.company || "",
     };
@@ -152,7 +152,7 @@ function Home() {
         say(
           { "Save me money": "Respect. We're going cheap.", "Treat me today": "Finally. Honesty.", "I'm willing to spend": "Oh, we're feeling important." }[value] ?? "Done.",
         );
-      else say(value === "Night" ? "Interesting." : "Okay.");
+      else say(value === "Night" ? "Interesting." : value === "Now" ? "We're going." : "Done.");
     }
     setBrief(b);
     advance(b, loc);
