@@ -57,14 +57,14 @@ export type Place = {
   address: string;
   lat: number;
   lng: number;
-  rating?: number;
-  ratingCount?: number;
-  priceLevel?: string;
+  rating?: number | undefined;
+  ratingCount?: number | undefined;
+  priceLevel?: string | undefined;
   types: string[];
-  primaryType?: string;
-  openNow?: boolean;
-  summary?: string;
-  mapsUri?: string;
+  primaryType?: string | undefined;
+  openNow?: boolean | undefined;
+  summary?: string | undefined;
+  mapsUri?: string | undefined;
   distanceKm: number;
 };
 
