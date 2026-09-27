@@ -304,7 +304,7 @@ function Landing({ onStart }: { onStart: () => void }) {
       </section>
 
       <section className="mt-24 ml-auto max-w-xs rotate-1 border-2 border-foreground p-4">
-        <p className="font-extrabold">Your first move is on us.</p>
+        <p className="font-extrabold">First one's free. Then ₹50.</p>
         <p className="mt-2 text-sm">
           Your first experience is free. After that, it's ₹50 every time we curate one for you.
           No subscription. No membership. No nonsense.
