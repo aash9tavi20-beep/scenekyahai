@@ -295,7 +295,7 @@ function Landing({ onStart }: { onStart: () => void }) {
           <br />
           <span className="ml-6 inline-block -rotate-1 bg-primary px-2 text-primary-foreground">We're Only Here</span>
           <br />
-          You Curate.
+          To Curate.
         </h1>
         <p className="mt-8 text-xl">Tell me what's up.</p>
         <button onClick={onStart} className="mt-8 w-full border-2 border-foreground bg-accent py-5 text-xl font-extrabold text-accent-foreground shadow-[6px_6px_0_0_var(--color-foreground)] active:translate-x-1 active:translate-y-1 active:shadow-none sm:w-auto sm:px-10">
