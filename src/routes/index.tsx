@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { react, locate, curate, type Brief } from "@/lib/curate.functions";
-import { PhoneGate } from "@/components/PhoneGate";
+import { EmailGate } from "@/components/EmailGate";
 import { PlanCards, type Plan } from "@/components/PlanCards";
 
 export const Route = createFileRoute("/")({
@@ -243,7 +243,7 @@ function Home() {
           {step === "when" && <Chips options={WHEN} onPick={(v) => pick(v, "when")} />}
           {step === "intent" && <Chips options={["Food", "Something to do", "Surprise me"]} onPick={(v) => pick(v, "intent")} />}
           {step === "spend" && <Chips options={SPEND} onPick={(v) => pick(v, "spend")} />}
-          {step === "auth" && <PhoneGate onDone={() => { say("Done."); run(brief, loc!); }} />}
+          {step === "auth" && <EmailGate onDone={() => { say("Done."); run(brief, loc!); }} />}
           {step === "paywall" && (
             <div className="pop-in space-y-2">
               <button disabled className="w-full bg-primary py-4 text-lg font-bold text-primary-foreground opacity-60">₹50 | Curate my experience</button>

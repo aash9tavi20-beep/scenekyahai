@@ -1,27 +1,27 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export function PhoneGate({ onDone }: { onDone: () => void }) {
-  const [phone, setPhone] = useState("");
+export function EmailGate({ onDone }: { onDone: () => void }) {
+  const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const full = "+91" + phone.replace(/\D/g, "").slice(-10);
+  const clean = email.trim().toLowerCase();
 
   async function send() {
     setErr(null);
-    if (full.length !== 13) return setErr("Ten digits. Come on.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) return setErr("That's not an email.");
     setBusy(true);
-    const { error } = await supabase.auth.signInWithOtp({ phone: full });
+    const { error } = await supabase.auth.signInWithOtp({ email: clean });
     setBusy(false);
-    if (error) return setErr("Couldn't text you. " + error.message);
+    if (error) return setErr("Couldn't email you. " + error.message);
     setSent(true);
   }
   async function verify() {
     setErr(null);
     setBusy(true);
-    const { error } = await supabase.auth.verifyOtp({ phone: full, token: code.trim(), type: "sms" });
+    const { error } = await supabase.auth.verifyOtp({ email: clean, token: code.trim(), type: "email" });
     setBusy(false);
     if (error) return setErr("Wrong code.");
     onDone();
@@ -29,20 +29,20 @@ export function PhoneGate({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="pop-in border-2 border-foreground bg-card p-4">
-      <p className="text-sm text-muted-foreground">Your first one's free. I just need your number.</p>
+      <p className="text-sm text-muted-foreground">Your first one's free. I just need your email.</p>
       {!sent ? (
         <div className="mt-3 flex gap-2">
-          <span className="flex items-center border-2 border-foreground px-2 font-mono text-sm">+91</span>
           <input
-            inputMode="numeric"
+            type="email"
+            inputMode="email"
             autoFocus
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="98xxxxxxxx"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@whatever.com"
             className="min-w-0 flex-1 border-2 border-foreground bg-background px-3 py-3 font-mono outline-none focus:border-accent"
           />
           <button disabled={busy} onClick={send} className="bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-50">
-            {busy ? "…" : "Text me"}
+            {busy ? "…" : "Email me"}
           </button>
         </div>
       ) : (

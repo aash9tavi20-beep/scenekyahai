@@ -228,13 +228,14 @@ Also "line": what you say when showing them, 1-4 words ("This works." "Okay. Opt
       return { status: "failed" as const, message: "Brain froze. Try again." };
     }
 
-    const flat = new Map(pool.flatMap((l, i) => l.slice(0, 8).map((p, j) => [`${"ABC"[i]}${j}`, p] as const)));
+    const flat = new Map<string, (typeof pool)[number][number]>(pool.flatMap((l, i) => l.slice(0, 8).map((p, j) => [`${"ABC"[i]}${j}`, p] as const)));
     const plans: Plan[] = [];
     for (const pk of picks.plans) {
       const p = flat.get(pk.key);
-      if (!p || p.openNow === false || plans.some((x) => x.name === p.name)) continue;
+      const label = (["A", "B", "C"] as const)[plans.length];
+      if (!p || !label || p.openNow === false || plans.some((x) => x.name === p.name)) continue;
       plans.push({
-        label: (["A", "B", "C"] as const)[plans.length],
+        label,
         name: p.name,
         category: pk.category,
         distanceKm: p.distanceKm,
@@ -253,10 +254,10 @@ Also "line": what you say when showing them, 1-4 words ("This works." "Okay. Opt
     }
 
     // Successful curation — only now does it count.
-    const phone = (context.claims as { phone?: string }).phone ?? null;
+    const email = (context.claims as { email?: string }).email ?? null;
     const { error } = await context.supabase.from("curations").insert({
       user_id: context.userId,
-      phone,
+      phone: email,
       was_free: true,
       price_inr: 0,
       summary: { area: data.label, plans: plans.map((p) => p.name) },
