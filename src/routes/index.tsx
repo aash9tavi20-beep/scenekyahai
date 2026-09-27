@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { react, locate, curate, type Brief } from "@/lib/curate.functions";
-import { EmailGate } from "@/components/PhoneGate";
+import { EmailGate } from "@/components/EmailGate";
 import { PlanCards, type Plan } from "@/components/PlanCards";
 
 export const Route = createFileRoute("/")({
