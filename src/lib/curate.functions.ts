@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const PRICE_INR = 50;
 
@@ -41,7 +40,10 @@ export const react = createServerFn({ method: "POST" })
           `\nYou're reacting to the user's latest message. The conversation step is "${data.step}".
 Return a very short reply (1-6 words usually). Do NOT ask a question; the app asks the next question itself.
 Also infer: intent (food/activity/either or null if unclear), spend preference (one of "Save me money","Reasonable spend","I'm willing to spend","Treat me today" or null),
-company (Alone/Friends/Date/Family/Celebration or null), and wants_change (true if they're asking to change/refine existing plans).`,
+company (Alone/Friends/Date/Family/Celebration or null), and wants_change (true if they're asking to change/refine existing plans).
+PROFANITY / ABUSE: if the user swears at you, insults you, or goes out of line, do NOT be cheerful and do NOT give a warning or lecture.
+Calmly roast them in one dry, blunt line (max ~10 words), then nudge back on track. E.g. "Wow. Bold. Anyway, where are we?" "Cute. Now answer the question." "Save it for the group chat. Focus."
+Casual swearing about their day (e.g. "shit day") is not abuse — just match the energy normally.`,
         input: `Earlier lines: ${data.history.slice(-8).join(" | ") || "none"}\nUser now: ${data.text}`,
         schemaName: "reaction",
         schema: {
@@ -88,15 +90,20 @@ function round(n: number) {
   return Math.round(n * 100) / 100;
 }
 
-export const curationStatus = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { count } = await context.supabase
-      .from("curations")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", context.userId);
-    return { freeAvailable: (count ?? 0) === 0, price: PRICE_INR };
-  });
+const DeviceId = z.string().regex(/^[a-zA-Z0-9-]{16,64}$/);
+
+async function usedCount(deviceId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { count } = await supabaseAdmin
+    .from("curations")
+    .select("id", { count: "exact", head: true })
+    .eq("device_id", deviceId);
+  return count ?? 0;
+}
+
+export const curationStatus = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ deviceId: DeviceId }).parse(d))
+  .handler(async ({ data }) => ({ freeAvailable: (await usedCount(data.deviceId)) === 0, price: PRICE_INR }));
 
 type Plan = {
   label: "A" | "B" | "C";
@@ -113,10 +120,10 @@ type Plan = {
 };
 
 export const curate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
       .object({
+        deviceId: DeviceId,
         brief: Brief,
         lat: z.number(),
         lng: z.number(),
@@ -125,13 +132,9 @@ export const curate = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     // Free check first — never generate a paid curation without payment.
-    const { count } = await context.supabase
-      .from("curations")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", context.userId);
-    const freeAvailable = (count ?? 0) === 0;
+    const freeAvailable = (await usedCount(data.deviceId)) === 0;
     if (!freeAvailable) {
       return { status: "payment_required" as const, price: PRICE_INR };
     }
@@ -254,10 +257,9 @@ Also "line": what you say when showing them, 1-4 words ("This works." "Okay. Opt
     }
 
     // Successful curation — only now does it count.
-    const email = (context.claims as { email?: string }).email ?? null;
-    const { error } = await context.supabase.from("curations").insert({
-      user_id: context.userId,
-      phone: email,
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("curations").insert({
+      device_id: data.deviceId,
       was_free: true,
       price_inr: 0,
       summary: { area: data.label, plans: plans.map((p) => p.name) },

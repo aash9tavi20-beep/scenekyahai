@@ -1,9 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { react, locate, curate, type Brief } from "@/lib/curate.functions";
-import { EmailGate } from "@/components/EmailGate";
+
+function deviceId() {
+  const k = "myw365_device";
+  let id = localStorage.getItem(k) ?? document.cookie.match(/myw365_device=([\w-]+)/)?.[1] ?? null;
+  if (!id) id = crypto.randomUUID();
+  localStorage.setItem(k, id);
+  document.cookie = `myw365_device=${id}; max-age=${60 * 60 * 24 * 730}; path=/; samesite=lax`;
+  return id;
+}
 import { PlanCards, type Plan } from "@/components/PlanCards";
 
 export const Route = createFileRoute("/")({
@@ -69,13 +76,7 @@ function Home() {
 
   async function advance(b: Brief, l: Loc | null) {
     const n = nextFrom(b, l);
-    if (n === "auth") {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) return run(b, l!);
-      say("Give me one more thing.");
-      setStep("auth");
-      return;
-    }
+    if (n === "auth") return run(b, l!);
     const q = QUESTIONS[n];
     if (q) setTimeout(() => say(q), 350);
     setStep(n);
@@ -185,7 +186,7 @@ function Home() {
     setThinking(true);
     if (!refine) setTimeout(() => say("Give me a minute."), 250);
     try {
-      const r = await curateFn({ data: { brief: b, lat: l.lat, lng: l.lng, label: l.label, previous: refine ? seen : [] } });
+      const r = await curateFn({ data: { deviceId: deviceId(), brief: b, lat: l.lat, lng: l.lng, label: l.label, previous: refine ? seen : [] } });
       setThinking(false);
       if (r.status === "ok") {
         setPlans(r.plans);
@@ -243,7 +244,6 @@ function Home() {
           {step === "when" && <Chips options={WHEN} onPick={(v) => pick(v, "when")} />}
           {step === "intent" && <Chips options={["Food", "Something to do", "Surprise me"]} onPick={(v) => pick(v, "intent")} />}
           {step === "spend" && <Chips options={SPEND} onPick={(v) => pick(v, "spend")} />}
-          {step === "auth" && <EmailGate onDone={() => { say("Done."); run(brief, loc!); }} />}
           {step === "paywall" && (
             <div className="pop-in space-y-2">
               <button disabled className="w-full bg-primary py-4 text-lg font-bold text-primary-foreground opacity-60">₹50 | Curate my experience</button>

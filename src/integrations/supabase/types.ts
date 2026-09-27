@@ -17,29 +17,32 @@ export type Database = {
       curations: {
         Row: {
           created_at: string
+          device_id: string | null
           id: string
           phone: string | null
           price_inr: number
           summary: Json
-          user_id: string
+          user_id: string | null
           was_free: boolean
         }
         Insert: {
           created_at?: string
+          device_id?: string | null
           id?: string
           phone?: string | null
           price_inr?: number
           summary?: Json
-          user_id: string
+          user_id?: string | null
           was_free?: boolean
         }
         Update: {
           created_at?: string
+          device_id?: string | null
           id?: string
           phone?: string | null
           price_inr?: number
           summary?: Json
-          user_id?: string
+          user_id?: string | null
           was_free?: boolean
         }
         Relationships: []
