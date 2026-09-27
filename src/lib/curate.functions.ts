@@ -253,10 +253,10 @@ Also "line": what you say when showing them, 1-4 words ("This works." "Okay. Opt
     }
 
     // Successful curation — only now does it count.
-    const phone = (context.claims as { phone?: string }).phone ?? null;
+    const email = (context.claims as { email?: string }).email ?? null;
     const { error } = await context.supabase.from("curations").insert({
       user_id: context.userId,
-      phone,
+      phone: email,
       was_free: true,
       price_inr: 0,
       summary: { area: data.label, plans: plans.map((p) => p.name) },
