@@ -113,8 +113,9 @@ function Home() {
     finally { setBusy(false); }
   }
   function sorted() {
-    if (!selected) { setError("Pick the plan you're taking first."); return; }
-    if (feedback.trim()) { go("refine"); return; }
+    if (!plans.some((plan) => plan.label === selected)) { setError("Pick the plan you're taking first."); return; }
+    if (feedback.trim()) setBrief((b) => ({ ...b, notes: [...b.notes, feedback.trim()].slice(-12) }));
+    stormSound.current?.stop();
     stormSound.current = startStormSound(); setFinale(true);
     setReply("Sorted. Go make it happen."); go("sorted");
   }
@@ -159,7 +160,9 @@ function Home() {
       </>}
     </main>}
     <footer className="scene-footer"><span>SceneKyaHai. A scene, not an itinerary.</span><span>INDIA, FOR NOW. <span className="text-primary">YOUR CALL, ALWAYS.</span></span></footer>
-    {finale && activePlan && <StormFinale name={activePlan.name} sound={stormSound.current} onClose={() => setFinale(false)} />}
+    {step === "results" && activePlan && <div className="scene-lock-bar"><span className="min-w-0 text-sm">Plan {activePlan.label} · {activePlan.name}</span><Button className="h-12 shrink-0" onClick={() => go("satisfaction")}><Check />Lock this scene<ArrowRight /></Button></div>}
+    {step === "sorted" && activePlan && <div className="scene-lock-bar"><span className="min-w-0 text-sm">Plan {activePlan.label} · Locked in.</span><Button className="h-12" onClick={sorted}><Sparkles />Replay the storm</Button></div>}
+    {finale && activePlan && <StormFinale name={activePlan.name} sound={stormSound.current} onClose={() => { stormSound.current?.stop(); setFinale(false); }} />}
   </div>;
 }
 function Choices({ options, value, onSelect }: { options: string[]; value: string; onSelect: (v: string) => void }) {

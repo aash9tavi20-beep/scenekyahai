@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ArrowRight, Volume2, VolumeX, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import coverArt from "@/assets/scene-cover.jpg";
@@ -92,7 +93,7 @@ export function StormFinale({ name, sound, onClose }: { name: string; sound: Sto
     draw(performance.now());
     return () => { cancelAnimationFrame(frame); window.removeEventListener("resize", resize); };
   }, []);
-  return <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Scene locked in" tabIndex={-1} className="storm-finale" onPointerDown={(e) => strikeRef.current(e.clientX, e.clientY)} onKeyDown={(e) => {
+  return createPortal(<div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Scene locked in" tabIndex={-1} className="storm-finale" onPointerDown={(e) => strikeRef.current(e.clientX, e.clientY)} onKeyDown={(e) => {
     if (e.key === "Escape") onClose();
     if (e.key === "Tab") {
       const buttons = dialogRef.current?.querySelectorAll<HTMLButtonElement>("button");
@@ -109,5 +110,5 @@ export function StormFinale({ name, sound, onClose }: { name: string; sound: Sto
     </div></div>
     <div className="storm-copy"><p className="font-mono storm-eyebrow">PLAN LOCKED. BED REJECTED.</p><h1>Consider it<br /><span>decided.</span></h1><p className="storm-plan">{name}</p><p className="font-sign storm-sign">Your plot twist has arrived.</p><div className="mt-8 flex flex-wrap justify-center gap-3"><Button className="storm-continue h-12" onClick={onClose}>Your scene<ArrowRight /></Button><Button variant="outline" className="storm-strike h-12" onClick={() => strikeRef.current(innerWidth * .75, innerHeight * .6)}><Zap />One more thunderbolt</Button></div></div>
     <span className="storm-bottom font-mono">FT. AASHRAY / GO MAKE IT HAPPEN.</span>
-  </div>;
+  </div>, document.body);
 }
