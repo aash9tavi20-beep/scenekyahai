@@ -21,3 +21,4 @@
 - Short conversational reactions run without blocking question navigation; discard stale responses so newer answers remain authoritative.
 - QuestionArt frames question/refinement screens outside the input area; crop shared surreal artwork by step to keep framing varied without layout shifts.
 - StormFinale is a dismissible full-screen canvas ending triggered only by final confirmation; initialize Web Audio in that click, stop it on dismissal, and honor reduced motion.
+- Render StormFinale into document.body so page stacking contexts cannot conceal the ending; confirmation feedback must not silently redirect away from lock-in.

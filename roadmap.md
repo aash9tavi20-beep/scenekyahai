@@ -1,4 +1,5 @@
 # SceneKyaHai refinement
+- [ ] Repair final-screen visibility and verify plan lock-in, feedback, storm dismissal and replay.
 - [x] Frame every question and refinement screen with varied enigmatic art; desktop/mobile artwork and clear inputs verified.
 - [x] Add full-screen interactive storm on final confirmation; real curation-to-finale flow, mute/unmute, lightning and dismissal verified without page errors.
 - [x] Repair missing Maps address-type crash; real Bengaluru plans, route times, fresh refinement and final selection verified; 12 tests pass.
