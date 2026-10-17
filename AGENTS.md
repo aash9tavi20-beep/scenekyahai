@@ -23,3 +23,4 @@
 - StormFinale is a dismissible full-screen canvas ending triggered only by final confirmation; initialize Web Audio in that click, stop it on dismissal, and honor reduced motion.
 - Render StormFinale into document.body so page stacking contexts cannot conceal the ending; confirmation feedback must not silently redirect away from lock-in.
 - Finale owns timed lock-in/scene/exit phases; replay remounts it with fresh click-initialized audio without reapplying feedback, keeping celebration separate from confirmation data.
+- Step changes focus the question heading without opening mobile keyboards; cover navigation resumes the retained step, and pending requests block cover navigation to avoid displaced results.

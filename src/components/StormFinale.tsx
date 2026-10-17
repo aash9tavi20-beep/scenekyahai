@@ -124,7 +124,7 @@ export function StormFinale({ name, sound, onClose, onReplay }: { name: string; 
     <img src={coverArt} alt="" className="storm-art" width={1536} height={1024} />
     <canvas ref={canvasRef} className="storm-canvas" aria-hidden="true" />
     <div className="storm-lock-cue" role="status" aria-live="polite"><span className="storm-lock-mark"><Check size={36} /></span><p className="font-mono">LOCKED IN.</p><p className="storm-lock-name">{name}</p></div>
-    <div className="storm-top"><span className="font-mono">SCENEKYAHAI / THE DECISION</span><div className="flex gap-2">
+    <div className="storm-top"><span className="font-mono">SCENEKYAHAI? / THE DECISION</span><div className="flex gap-2">
       <Button variant="ghost" size="icon" aria-label={muted ? "Unmute storm" : "Mute storm"} title={muted ? "Unmute storm" : "Mute storm"} onClick={() => { sound?.mute(!muted); setMuted(!muted); }}>{muted ? <VolumeX /> : <Volume2 />}</Button>
       <Button variant="ghost" size="icon" aria-label="Close storm" title="Close storm" onClick={dismiss}><X /></Button>
     </div></div>
