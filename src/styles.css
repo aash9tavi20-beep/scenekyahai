@@ -170,13 +170,13 @@ body { letter-spacing: 0; }
 @media (max-width: 640px) { .question-art { top: 90px; height: 900px; } .question-art-left, .question-art-right { width: 16px; opacity: .6; } .enigma-strip { height: 100px; } }
 
 .storm-finale { position: fixed; inset: 0; z-index: 100; background: var(--cover); color: var(--cover-foreground); isolation: isolate; display: flex; flex-direction: column; justify-content: center; overflow: auto; animation: storm-reveal .65s ease-out both; }
-.storm-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .2; pointer-events: none; }
+.storm-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .2; pointer-events: none; transition: opacity .65s ease; }
 .storm-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .storm-top { position: absolute; top: 24px; left: 4%; right: 4%; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; font-size: 11px; }
 .storm-top > span { min-width: 0; }
 .storm-top button { color: var(--cover-foreground); }
 .storm-top button:hover { background: var(--secondary); color: var(--cover); }
-.storm-copy { position: relative; max-width: 900px; margin: auto; padding: 110px 24px; text-align: center; pointer-events: none; }
+.storm-copy { position: relative; max-width: 900px; margin: auto; padding: 110px 24px; text-align: center; pointer-events: none; transition: opacity .65s ease, transform .65s cubic-bezier(.2,.8,.2,1); }
 .storm-copy button { pointer-events: auto; }
 .storm-eyebrow { color: var(--secondary); font-size: 12px; margin-bottom: 28px; }
 .storm-copy h1 { font-size: 100px; line-height: 1.02; font-weight: 800; }
@@ -187,10 +187,19 @@ body { letter-spacing: 0; }
 .storm-continue:hover { background: var(--secondary); color: var(--cover); }
 .storm-strike { background: transparent; border-color: var(--secondary); color: var(--cover-foreground); }
 .storm-strike:hover { background: var(--secondary); color: var(--cover); }
+.storm-replay { color: var(--secondary); }
+.storm-replay:hover { background: var(--secondary); color: var(--cover); }
+.storm-lock-cue { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 80px 24px; text-align: center; pointer-events: none; opacity: 0; transform: scale(1.04); transition: opacity .4s ease, transform .6s ease; }
+.storm-lock-mark { width: 80px; height: 80px; display: grid; place-items: center; border: 1px solid var(--coral); border-radius: 50%; color: var(--coral); background: var(--cover); }
+.storm-lock-name { max-width: 650px; font-size: 24px; overflow-wrap: anywhere; }
+.storm-locking .storm-lock-cue { opacity: 1; transform: scale(1); }
+.storm-locking .storm-copy { opacity: 0; transform: translateY(18px); }
+.storm-locking .storm-art { opacity: .06; }
+.storm-leaving { opacity: 0; transition: opacity .32s ease; animation: none; pointer-events: none; }
 .storm-bottom { position: absolute; bottom: 24px; left: 0; right: 0; text-align: center; color: var(--secondary); font-size: 10px; }
 @keyframes storm-reveal { from { opacity: .35; } to { opacity: 1; } }
 .scene-lock-bar { position: sticky; bottom: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px max(20px, calc((100% - 1116px) / 2)); padding-bottom: max(14px, env(safe-area-inset-bottom)); background: var(--background); border-top: 1px solid var(--primary); }
 .scene-lock-bar > span { overflow-wrap: anywhere; }
 @media (max-width: 640px) { .scene-lock-bar { flex-wrap: wrap; gap: 10px; } .scene-lock-bar > span { flex: 1 1 100%; } .scene-lock-bar > button { width: 100%; } }
 @media (max-width: 640px) { .storm-copy h1 { font-size: 54px; } .storm-plan { font-size: 20px; } .storm-top { top: 16px; font-size: 9px; } .storm-copy { padding: 96px 20px; } }
-@media (prefers-reduced-motion: reduce) { .storm-finale { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .storm-finale { animation: none; } .storm-copy, .storm-lock-cue { transform: none; } }
