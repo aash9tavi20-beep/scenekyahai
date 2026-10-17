@@ -1,9 +1,9 @@
 # SceneKyaHai refinement
-- [ ] Apply forest/coral/ivory/sage palette and abstract cover-first experience.
-- [ ] Suspend payments while preserving device history; verify regression tests.
-- [ ] Sharpen selection copy and add uncluttered art throughout; check desktop/mobile flow.
+- [x] Apply forest/coral/ivory/sage palette and abstract cover-first experience.
+- [x] Suspend payments while preserving device history; 11 regression tests pass.
+- [x] Sharpen selection copy and add uncluttered art throughout; desktop/mobile cover navigation and retained answers verified.
 - [x] Rebrand and replace palette; focused sequential screens with preserved answers.
 - [x] Mandatory genuine distance constraints and India-only recommendation logic; 10 passing tests.
 - [x] Practical recommendations, iterative refinement and satisfaction flow.
-- [x] Preserve device recognition and existing UPI flow; desktop/mobile navigation verified.
+- [x] Preserve device recognition; UPI flow now suspended by request.
 - [ ] Live place results, route times and result/refinement journey: Maps-dependent checks unavailable in sandbox; validate on authorized published origin.

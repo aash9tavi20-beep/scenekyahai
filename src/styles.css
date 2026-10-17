@@ -139,7 +139,7 @@ body { letter-spacing: 0; }
  .scene-cover { min-height: calc(100svh - 130px); align-items: flex-start; }
  .cover-art { object-position: 42% center; opacity: .48; }
  .cover-copy { width: 100%; padding: 54px 20px 130px; }
- .cover-copy h1 { font-size: 54px; }
+ .cover-copy h1 { font-size: 48px; }
  .cover-eyebrow { font-size: 9px; margin-bottom: 25px; }
  .cover-tagline { font-size: 23px; max-width: 300px; }
  .cover-start { margin-top: 34px; max-width: 100%; padding: 14px 18px; }
