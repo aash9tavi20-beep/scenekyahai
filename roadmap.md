@@ -1,4 +1,6 @@
 # SceneKyaHai refinement
+- [ ] Diagnose and repair failed curation; verify real results and refinement.
+- [ ] Improve question transitions and keep cover text legible over the artwork.
 - [x] Apply forest/coral/ivory/sage palette and abstract cover-first experience.
 - [x] Suspend payments while preserving device history; 11 regression tests pass.
 - [x] Sharpen selection copy and add uncluttered art throughout; desktop/mobile cover navigation and retained answers verified.
