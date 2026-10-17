@@ -14,6 +14,11 @@ it("accepts verified India only and rejects foreign or unknown countries", () =>
   expect(isIndia([{ types: ["country"], short_name: "NP" }])).toBe(false);
   expect(isIndia([])).toBe(false);
 });
+it("handles missing address component types without losing the India boundary", () => {
+  expect(isIndia([{ shortText: "560038" }, { types: ["country"], shortText: "IN" }])).toBe(true);
+  expect(isIndia([{ shortText: "IN" }])).toBe(false);
+  expect(isIndia([{ shortText: "560038" }, { types: ["country"], shortText: "NP" }])).toBe(false);
+});
 it("preserves unrelated preferences when refining", () => {
   const original = BriefSchema.parse({ ...EMPTY_BRIEF, distance: "15", mood: "Sad day", craving: "Spicy", company: "Alone", spend: "Treat me today" });
   const updated = mergeRefinement(original, { spend: "Save me money" }, "Make it cheaper");

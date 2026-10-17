@@ -122,6 +122,7 @@ body { letter-spacing: 0; }
 .cover-shell .scene-header .text-muted-foreground { color: var(--secondary); }
 .scene-cover { position: relative; min-height: calc(100svh - 140px); overflow: hidden; display: flex; align-items: center; }
 .cover-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.scene-cover::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, var(--cover) 0%, color-mix(in srgb, var(--cover) 94%, transparent) 32%, color-mix(in srgb, var(--cover) 68%, transparent) 55%, transparent 82%); }
 .cover-copy { position: relative; z-index: 1; padding: 70px 4% 110px; width: 64%; }
 .cover-eyebrow { font-size: 11px; color: var(--secondary); margin-bottom: 30px; }
 .cover-copy h1 { font-size: 88px; font-weight: 800; line-height: 1.02; overflow-wrap: anywhere; }
@@ -130,7 +131,7 @@ body { letter-spacing: 0; }
 .cover-start { margin-top: 38px; background: var(--coral); color: var(--cover); border-radius: 4px; white-space: normal; height: auto; min-height: 56px; }
 .cover-start:hover { background: var(--secondary); color: var(--cover); }
 .cover-aside { font-size: 25px; color: var(--secondary); margin-top: 19px; }
-.cover-bottom { position: absolute; bottom: 25px; left: 4%; right: 4%; display: flex; justify-content: space-between; gap: 16px; font-size: 10px; color: var(--secondary); }
+.cover-bottom { position: absolute; z-index: 1; bottom: 25px; left: 4%; right: 4%; display: flex; justify-content: space-between; gap: 16px; font-size: 10px; color: var(--secondary); }
 .cover-shell .scene-footer { max-width: none; padding-inline: 4%; color: var(--secondary); border-color: color-mix(in srgb, var(--secondary) 30%, transparent); }
 .cover-shell .scene-footer .text-primary { color: var(--coral); }
 @media (min-width: 1500px) { .cover-copy h1 { font-size: 104px; } }
@@ -138,6 +139,7 @@ body { letter-spacing: 0; }
  .cover-shell .scene-header { padding: 18px 20px; }
  .scene-cover { min-height: calc(100svh - 130px); align-items: flex-start; }
  .cover-art { object-position: 42% center; opacity: .48; }
+ .scene-cover::after { background: color-mix(in srgb, var(--cover) 42%, transparent); }
  .cover-copy { width: 100%; padding: 54px 20px 130px; }
  .cover-copy h1 { font-size: 48px; }
  .cover-eyebrow { font-size: 9px; margin-bottom: 25px; }

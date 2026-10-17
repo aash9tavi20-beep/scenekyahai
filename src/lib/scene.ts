@@ -27,8 +27,8 @@ export const EMPTY_BRIEF: DraftBrief = { mood: "", intent: null, craving: "", wh
 export function withinDistance(km: number, distance: Distance) {
   return Number.isFinite(km) && km >= 0 && (distance === "extended" || km <= Number(distance));
 }
-export function isIndia(components: { types: string[]; shortText?: string; short_name?: string }[]) {
-  return components.some((c) => c.types.includes("country") && (c.shortText ?? c.short_name) === "IN");
+export function isIndia(components: { types?: string[]; shortText?: string; short_name?: string }[]) {
+  return components.some((c) => c.types?.includes("country") && (c.shortText ?? c.short_name) === "IN");
 }
 export type OpeningPeriod = { open?: { day: number; hour?: number; minute?: number }; close?: { day: number; hour?: number; minute?: number } };
 export function openAt(periods: OpeningPeriod[] | undefined, when: string, now = new Date()): boolean | null {

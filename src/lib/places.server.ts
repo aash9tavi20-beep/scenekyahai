@@ -30,8 +30,8 @@ export async function geocode(address: string): Promise<{ loc: LatLng; label: st
   const first = j.results?.[0];
   if (!first || !isIndia(first.address_components)) return null;
   const locality =
-    first.address_components.find((c) => c.types.includes("sublocality"))?.long_name ??
-    first.address_components.find((c) => c.types.includes("locality"))?.long_name ??
+    first.address_components.find((c) => c.types?.includes("sublocality"))?.long_name ??
+    first.address_components.find((c) => c.types?.includes("locality"))?.long_name ??
     first.formatted_address.split(",")[0];
   return { loc: first.geometry.location, label: locality ?? address };
 }
@@ -47,8 +47,8 @@ export async function reverseLabel(loc: LatLng): Promise<string | null> {
   const comps = j.results?.[0]?.address_components ?? [];
   if (!isIndia(comps)) return null;
   return (
-    comps.find((c) => c.types.includes("sublocality"))?.long_name ??
-    comps.find((c) => c.types.includes("locality"))?.long_name ??
+    comps.find((c) => c.types?.includes("sublocality"))?.long_name ??
+    comps.find((c) => c.types?.includes("locality"))?.long_name ??
     "your area"
   );
 }
@@ -121,6 +121,7 @@ export async function searchPlaces(query: string, center: LatLng, radiusKm: numb
   };
   const j = (await r.json()) as { places?: Raw[] };
   return (j.places ?? [])
+    .filter((p) => Number.isFinite(p.location?.latitude) && Number.isFinite(p.location?.longitude))
     .filter((p) => isIndia(p.addressComponents ?? []))
     .filter((p) => p.businessStatus !== "CLOSED_PERMANENTLY" && p.businessStatus !== "CLOSED_TEMPORARILY")
     .map((p) => {
