@@ -144,7 +144,7 @@ function Home() {
   const activePlan = plans.find((p) => p.label === selected);
   return <div className={`min-h-dvh bg-background scene-shell ${step === "cover" ? "cover-shell" : ""}`}>
     <header className="scene-header">
-      <Button variant="ghost" disabled={busy} className="px-0 text-xl font-extrabold text-primary hover:bg-transparent" onClick={() => go("cover")}>SceneKyaHai<span className="text-secondary-foreground">?</span></Button>
+      <Button variant="ghost" disabled={busy} className="gap-0 px-0 text-xl font-extrabold text-primary hover:bg-transparent" onClick={() => go("cover")}>SceneKyaHai<span className="text-secondary-foreground">?</span></Button>
       <div className="flex items-center gap-6"><span className="hidden text-xs text-muted-foreground sm:block">A LITTLE LESS THINKING. A LITTLE MORE LIVING.</span><span className="font-sign text-2xl text-primary">Ft. Aashray</span></div>
     </header>
     {(questionStep || step === "refine" || step === "satisfaction") && <QuestionArt stage={questionStep ? progress : step === "refine" ? 8 : 9} />}
