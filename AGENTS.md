@@ -19,3 +19,5 @@
 - The conversation state machine begins with a cover state; generated cover and doodle assets provide shared art framing without obstructing interactive content.
 - Treat missing Maps address-component types as unknown, not a fatal error; isolate independent venue searches so one failed search cannot discard successful ones.
 - Short conversational reactions run without blocking question navigation; discard stale responses so newer answers remain authoritative.
+- QuestionArt frames question/refinement screens outside the input area; crop shared surreal artwork by step to keep framing varied without layout shifts.
+- StormFinale is a dismissible full-screen canvas ending triggered only by final confirmation; initialize Web Audio in that click, stop it on dismissal, and honor reduced motion.
