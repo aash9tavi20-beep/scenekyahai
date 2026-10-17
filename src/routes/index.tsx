@@ -71,7 +71,7 @@ function Home() {
   async function next() {
     if (busy) return;
     if (step === "location") { if (loc && address === loc.label) go("when"); else await findLocation(); return; }
-    if (step === "distance") { if (!brief.distance || !loc) return; await run({ ...brief, distance: brief.distance }, loc); return; }
+    if (step === "distance") { if (!brief.distance || !loc) return; await run({ ...brief, distance: brief.distance }, loc, plans.length > 0); return; }
     setBusy(true);
     if (step === "mood" || step === "craving") {
       const r = await reaction(step === "mood" ? brief.mood : brief.craving || "No particular craving");
@@ -114,7 +114,7 @@ function Home() {
     </header>
     <main className={`scene-main ${questionStep ? "question-main" : ""}`}>
       {questionStep ? <>
-        <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground"><span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" />YOUR SCENE, YOUR CALL</span><span>{progress + 1} / {brief.intent === "activity" ? 7 : 8}</span></div>
+        <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground"><span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" />YOUR SCENE, YOUR CALL</span><span>{progress + 1 - (brief.intent === "activity" && progress > 4 ? 1 : 0)} / {brief.intent === "activity" ? 7 : 8}</span></div>
         <div className="mt-3 flex gap-1.5" aria-label="Curation progress">{STEPS.filter((s) => s !== "craving" || brief.intent !== "activity").map((s) => <span key={s} className={`h-1 flex-1 rounded-full ${STEPS.indexOf(s) <= progress ? "bg-primary" : "bg-border"}`} />)}</div>
         <section key={step} className="step-content pop-in">
           {step === "mood" && <><p className="mb-5 text-sm font-medium text-primary">Here to curate your Taqdeer &amp; your Bad-Decisions</p><h1 className="scene-heading">{QUESTIONS.mood}</h1><p className="mt-4 text-muted-foreground">Bored? Confused? Had a day? Spill it out.</p></>}

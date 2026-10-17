@@ -93,7 +93,7 @@ export async function searchPlaces(query: string, center: LatLng, radiusKm: numb
       pageSize: 12,
       openNow: when === "Now" || undefined,
       regionCode: "IN",
-      locationBias: {
+      locationBias: radiusKm === null ? undefined : {
         circle: { center: { latitude: center.lat, longitude: center.lng }, radius: Math.min((radiusKm ?? 50) * 1000, 50000) },
       },
     }),

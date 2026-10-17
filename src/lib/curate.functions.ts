@@ -142,7 +142,7 @@ export const curate = createServerFn({ method: "POST" })
 
     const { aiJson, AASHRAY_VOICE } = await import("./ai.server");
     const { searchPlaces, reverseLabel, travelDetails } = await import("./places.server");
-    const center = { lat: data.lat, lng: data.lng };
+    const center = { lat: round(data.lat), lng: round(data.lng) };
     if (!(await reverseLabel(center))) return { status: "empty" as const, message: "India only for now. Pick a starting spot here." };
     const b = data.brief;
     const briefText = `Mood: ${b.mood}\nWants: ${b.intent ?? "unclear"}\nCraving: ${b.craving || "-"}\nWhen: ${b.when || "now"}\nCompany: ${b.company || "-"}\nSpend: ${b.spend || "-"}\nRefinements: ${b.notes.join("; ") || "-"}\nDistance: ${b.distance === "extended" ? "Intercity/interstate within India; consider transport and feasibility, not an arbitrary 60 km cap" : `Hard maximum ${b.distance} km`}\nTransport: ${b.transport}\nArea: ${data.label}, India\nAvoid repeating: ${data.previous.join(", ") || "-"}`;
@@ -285,6 +285,7 @@ export const refineBrief = createServerFn({ method: "POST" })
         system: AASHRAY_VOICE + "\nInterpret refinement feedback. Return null for unchanged fields. Preserve hard distance unless user explicitly changes it; closer should tighten it. Spending uses Save me money/Reasonable spend/I'm willing to spend/Treat me today. Reply in 1-6 words. Feedback always remains in notes. Never discard mood, transport, or unrelated preferences.",
         input: JSON.stringify(data), schemaName: "refinement", schema: { type: "object", additionalProperties: false, required: ["reply", "intent", "spend", "company", "distance", "craving", "when"], properties: { reply: { type: "string" }, intent: { type: ["string", "null"], enum: ["food", "activity", "either", null] }, distance: { type: ["string", "null"], enum: ["5", "15", "30", "60", "extended", null] }, spend: { type: ["string", "null"] }, company: { type: ["string", "null"] }, craving: { type: ["string", "null"] }, when: { type: ["string", "null"] } } },
       });
-      return { brief: mergeRefinement(data.brief, patch, data.feedback), reply: patch.reply };
+      const updated = Brief.parse(mergeRefinement(data.brief, patch, data.feedback));
+      return { brief: updated, reply: patch.reply };
     } catch { return { brief: mergeRefinement(data.brief, {}, data.feedback), reply: "Fair. Changing the scene." }; }
   });
