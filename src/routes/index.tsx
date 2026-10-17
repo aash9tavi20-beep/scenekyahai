@@ -58,7 +58,11 @@ function Home() {
   const mainRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (step === "cover") return;
-    const frame = requestAnimationFrame(() => mainRef.current?.querySelector<HTMLElement>("h1")?.focus({ preventScroll: true }));
+    const frame = requestAnimationFrame(() => {
+      const heading = mainRef.current?.querySelector<HTMLElement>("h1");
+      heading?.setAttribute("tabindex", "-1");
+      heading?.focus({ preventScroll: true });
+    });
     return () => cancelAnimationFrame(frame);
   }, [step]);
   function go(next: Step) {
