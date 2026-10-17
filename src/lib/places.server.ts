@@ -1,3 +1,4 @@
+import { isIndia, openAt, type OpeningPeriod } from "./scene";
 const GATEWAY = "https://connector-gateway.lovable.dev/google_maps";
 
 function headers(extra: Record<string, string> = {}) {
@@ -16,7 +17,7 @@ export type LatLng = { lat: number; lng: number };
 
 export async function geocode(address: string): Promise<{ loc: LatLng; label: string } | null> {
   const r = await fetch(
-    `${GATEWAY}/maps/api/geocode/json?address=${encodeURIComponent(address)}&region=in`,
+    `${GATEWAY}/maps/api/geocode/json?address=${encodeURIComponent(address)}&components=country:IN&region=in`,
     { headers: headers() },
   );
   if (!r.ok) {
@@ -24,10 +25,10 @@ export async function geocode(address: string): Promise<{ loc: LatLng; label: st
     return null;
   }
   const j = (await r.json()) as {
-    results?: { geometry: { location: LatLng }; formatted_address: string; address_components: { long_name: string; types: string[] }[] }[];
+    results?: { geometry: { location: LatLng }; formatted_address: string; address_components: { long_name: string; short_name: string; types: string[] }[] }[];
   };
   const first = j.results?.[0];
-  if (!first) return null;
+  if (!first || !isIndia(first.address_components)) return null;
   const locality =
     first.address_components.find((c) => c.types.includes("sublocality"))?.long_name ??
     first.address_components.find((c) => c.types.includes("locality"))?.long_name ??
@@ -35,15 +36,16 @@ export async function geocode(address: string): Promise<{ loc: LatLng; label: st
   return { loc: first.geometry.location, label: locality ?? address };
 }
 
-export async function reverseLabel(loc: LatLng): Promise<string> {
+export async function reverseLabel(loc: LatLng): Promise<string | null> {
   const r = await fetch(`${GATEWAY}/maps/api/geocode/json?latlng=${loc.lat},${loc.lng}`, {
     headers: headers(),
   });
-  if (!r.ok) return "your area";
+  if (!r.ok) return null;
   const j = (await r.json()) as {
-    results?: { address_components: { long_name: string; types: string[] }[] }[];
+    results?: { address_components: { long_name: string; short_name: string; types: string[] }[] }[];
   };
   const comps = j.results?.[0]?.address_components ?? [];
+  if (!isIndia(comps)) return null;
   return (
     comps.find((c) => c.types.includes("sublocality"))?.long_name ??
     comps.find((c) => c.types.includes("locality"))?.long_name ??
@@ -66,6 +68,7 @@ export type Place = {
   summary?: string | undefined;
   mapsUri?: string | undefined;
   distanceKm: number;
+  openAtTime: boolean | null;
 };
 
 export function haversine(a: LatLng, b: LatLng) {
@@ -78,19 +81,20 @@ export function haversine(a: LatLng, b: LatLng) {
   return 2 * R * Math.asin(Math.sqrt(x));
 }
 
-export async function searchPlaces(query: string, center: LatLng, radiusKm: number, openNow: boolean): Promise<Place[]> {
+export async function searchPlaces(query: string, center: LatLng, radiusKm: number | null, when: string): Promise<Place[]> {
   const r = await fetch(`${GATEWAY}/places/v1/places:searchText`, {
     method: "POST",
     headers: headers({
       "X-Goog-FieldMask":
-        "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.types,places.primaryTypeDisplayName,places.currentOpeningHours.openNow,places.editorialSummary,places.googleMapsUri,places.businessStatus",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.types,places.primaryTypeDisplayName,places.currentOpeningHours.openNow,places.regularOpeningHours.periods,places.addressComponents,places.editorialSummary,places.googleMapsUri,places.businessStatus",
     }),
     body: JSON.stringify({
       textQuery: query,
       pageSize: 12,
-      openNow: openNow || undefined,
-      locationBias: {
-        circle: { center: { latitude: center.lat, longitude: center.lng }, radius: Math.min(radiusKm * 1000, 50000) },
+      openNow: when === "Now" || undefined,
+      regionCode: "IN",
+      locationBias: radiusKm === null ? undefined : {
+        circle: { center: { latitude: center.lat, longitude: center.lng }, radius: Math.min((radiusKm ?? 50) * 1000, 50000) },
       },
     }),
   });
@@ -112,9 +116,12 @@ export async function searchPlaces(query: string, center: LatLng, radiusKm: numb
     editorialSummary?: { text: string };
     googleMapsUri?: string;
     businessStatus?: string;
+    addressComponents?: { types: string[]; shortText?: string }[];
+    regularOpeningHours?: { periods?: OpeningPeriod[] };
   };
   const j = (await r.json()) as { places?: Raw[] };
   return (j.places ?? [])
+    .filter((p) => isIndia(p.addressComponents ?? []))
     .filter((p) => p.businessStatus !== "CLOSED_PERMANENTLY" && p.businessStatus !== "CLOSED_TEMPORARILY")
     .map((p) => {
       const loc = { lat: p.location.latitude, lng: p.location.longitude };
@@ -132,8 +139,23 @@ export async function searchPlaces(query: string, center: LatLng, radiusKm: numb
         openNow: p.currentOpeningHours?.openNow,
         summary: p.editorialSummary?.text,
         mapsUri: p.googleMapsUri,
-        distanceKm: Math.round(haversine(center, loc) * 10) / 10,
+        distanceKm: haversine(center, loc),
+        openAtTime: when === "Now" ? p.currentOpeningHours?.openNow ?? null : openAt(p.regularOpeningHours?.periods, when),
       };
     })
-    .filter((p) => p.distanceKm <= radiusKm);
+    .filter((p) => (radiusKm === null || p.distanceKm <= radiusKm) && p.openAtTime !== false);
+}
+
+export async function travelDetails(center: LatLng, destination: LatLng, mode: "DRIVE" | "TRANSIT" | "WALK"): Promise<{ minutes: number; roadKm: number } | null> {
+  try {
+    const r = await fetch(`${GATEWAY}/routes/directions/v2:computeRoutes`, {
+      method: "POST", headers: headers({ "X-Goog-FieldMask": "routes.duration,routes.distanceMeters" }),
+      body: JSON.stringify({ origin: { location: { latLng: { latitude: center.lat, longitude: center.lng } } }, destination: { location: { latLng: { latitude: destination.lat, longitude: destination.lng } } }, travelMode: mode }),
+    });
+    if (!r.ok) { console.error("travel unavailable", r.status); return null; }
+    const data = await r.json() as { routes?: { duration?: string; distanceMeters?: number }[] };
+    const route = data.routes?.[0];
+    if (!route?.duration || !/^\d+(\.\d+)?s$/.test(route.duration)) return null;
+    return { minutes: Math.ceil(parseFloat(route.duration) / 60), roadKm: Math.round((route.distanceMeters ?? 0) / 100) / 10 };
+  } catch { return null; }
 }
