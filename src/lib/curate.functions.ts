@@ -162,7 +162,12 @@ export const curate = createServerFn({ method: "POST" })
     }
 
     const barrier = b.distance === "extended" ? null : Number(b.distance);
-    let pool = await Promise.all([queries.a, queries.b, queries.c].map((q) => searchPlaces(q, center, barrier, b.when || "Now")));
+    const searches = await Promise.allSettled([queries.a, queries.b, queries.c].map((q) => searchPlaces(q, center, barrier, b.when || "Now")));
+    let pool = searches.map((result) => {
+      if (result.status === "fulfilled") return result.value;
+      console.error("curation place search failed", result.reason);
+      return [];
+    });
     pool = pool.map((list) => list.filter((p) => !data.previous.includes(p.name) && withinDistance(p.distanceKm, b.distance)));
     if (pool.every((l) => l.length === 0)) {
       return { status: "empty" as const, message: "Nothing useful within your limits. Change the scene?" };

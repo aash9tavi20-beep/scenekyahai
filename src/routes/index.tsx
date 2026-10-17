@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, MapPin, Sparkles, SlidersHorizontal, RotateCcw, Navigation, Coffee, Compass, Heart, Loader2 } from "lucide-react";
 import { react, locate, curate, refineBrief } from "@/lib/curate.functions";
 import { DISTANCES, EMPTY_BRIEF, type Brief, type DraftBrief } from "@/lib/scene";
@@ -47,15 +47,18 @@ function Home() {
   const [address, setAddress] = useState(""), [busy, setBusy] = useState(false), [reply, setReply] = useState("No grand plans. Just a good scene."), [error, setError] = useState("");
   const [history, setHistory] = useState<string[]>([]), [plans, setPlans] = useState<Plan[]>([]), [seen, setSeen] = useState<string[]>([]), [feedback, setFeedback] = useState(""), [selected, setSelected] = useState<string | null>(null), [pendingRefine, setPendingRefine] = useState(false);
   const questionStep = STEPS.includes(step), progress = STEPS.indexOf(step);
-  function go(next: Step) { setError(""); setStep(next); }
+  const reactionVersion = useRef(0);
+  function go(next: Step) { setError(""); setStep(next); window.scrollTo({ top: 0, behavior: "instant" }); }
   function back() {
     let i = STEPS.indexOf(step) - 1;
     if (STEPS[i] === "craving" && brief.intent === "activity") i--;
     if (i >= 0) go(STEPS[i] ?? "mood"); else go("cover");
   }
   async function reaction(text: string) {
+    const version = ++reactionVersion.current;
     try {
       const r = await reactFn({ data: { step, text, history: history.slice(-20) } });
+      if (version !== reactionVersion.current) return null;
       setReply(r.reply); setHistory((h) => [...h, `U: ${text.slice(0, 280)}`, `A: ${r.reply.slice(0, 280)}`].slice(-20));
       return r;
     } catch { setReply("Fair. Keep going."); return null; }
@@ -78,12 +81,11 @@ function Home() {
     if (busy) return;
     if (step === "location") { if (loc && address === loc.label) go("when"); else await findLocation(); return; }
     if (step === "distance") { if (!brief.distance || !loc) return; await run({ ...brief, distance: brief.distance }, loc, plans.length > 0); return; }
-    setBusy(true);
     if (step === "mood" || step === "craving") {
-      const r = await reaction(step === "mood" ? brief.mood : brief.craving || "No particular craving");
-      if (r && step === "mood") setBrief((b) => ({ ...b, company: b.company || r.company || "" }));
+      setReply("Fair. Keep going.");
+      void reaction(step === "mood" ? brief.mood : brief.craving || "No particular craving");
     } else setReply(step === "spend" && brief.spend === "Save me money" ? "Respect. We're going cheap." : "Okay. Getting somewhere.");
-    setBusy(false);
+    if (step !== "mood" && step !== "craving") reactionVersion.current++;
     const i = STEPS.indexOf(step);
     go(step === "intent" && brief.intent === "activity" ? "company" : STEPS[i + 1] ?? "distance");
   }
