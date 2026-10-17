@@ -1,6 +1,6 @@
 # SceneKyaHai refinement
-- [ ] Diagnose and repair failed curation; verify real results and refinement.
-- [ ] Improve question transitions and keep cover text legible over the artwork.
+- [x] Repair missing Maps address-type crash; real Bengaluru plans, route times, fresh refinement and final selection verified; 12 tests pass.
+- [x] Remove reaction waits between questions; retained answers and legible desktop/mobile cover verified.
 - [x] Apply forest/coral/ivory/sage palette and abstract cover-first experience.
 - [x] Suspend payments while preserving device history; 11 regression tests pass.
 - [x] Sharpen selection copy and add uncluttered art throughout; desktop/mobile cover navigation and retained answers verified.
@@ -8,4 +8,4 @@
 - [x] Mandatory genuine distance constraints and India-only recommendation logic; 10 passing tests.
 - [x] Practical recommendations, iterative refinement and satisfaction flow.
 - [x] Preserve device recognition; UPI flow now suspended by request.
-- [ ] Live place results, route times and result/refinement journey: Maps-dependent checks unavailable in sandbox; validate on authorized published origin.
+- [x] Live place results, route times and result/refinement journey verified through the running app with real Maps responses.
