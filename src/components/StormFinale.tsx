@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, Volume2, VolumeX, X, Zap } from "lucide-react";
+import { ArrowRight, Check, RotateCcw, Volume2, VolumeX, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import coverArt from "@/assets/scene-cover.jpg";
 
@@ -11,7 +11,8 @@ export function startStormSound(): StormSound | null {
     const context = new AudioContext();
     void context.resume();
     const master = context.createGain();
-    master.gain.value = 0.32;
+    master.gain.value = 0;
+    master.gain.setTargetAtTime(0.32, context.currentTime + 0.85, 0.22);
     master.connect(context.destination);
     const buffer = context.createBuffer(1, context.sampleRate * 9, context.sampleRate);
     const samples = buffer.getChannelData(0);
@@ -32,12 +33,23 @@ export function startStormSound(): StormSound | null {
   } catch { return null; }
 }
 
-export function StormFinale({ name, sound, onClose }: { name: string; sound: StormSound | null; onClose: () => void }) {
+export function StormFinale({ name, sound, onClose, onReplay }: { name: string; sound: StormSound | null; onClose: () => void; onReplay: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const strikeRef = useRef<(x: number, y: number) => void>(() => {});
   const [muted, setMuted] = useState(false);
+  const [phase, setPhase] = useState<"locking" | "storm" | "leaving">("locking");
+  const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cleanupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    const timer = setTimeout(() => setPhase("storm"), window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 300 : 850);
+    return () => { clearTimeout(timer); if (exitTimer.current) clearTimeout(exitTimer.current); };
+  }, []);
+  function dismiss() {
+    if (phase === "leaving") return;
+    setPhase("leaving"); sound?.mute(true);
+    exitTimer.current = setTimeout(onClose, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 320);
+  }
   useEffect(() => {
     if (cleanupTimer.current) clearTimeout(cleanupTimer.current);
     const before = document.activeElement;
@@ -51,6 +63,7 @@ export function StormFinale({ name, sound, onClose }: { name: string; sound: Sto
     };
   }, [sound]);
   useEffect(() => {
+    if (phase !== "storm") return;
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
@@ -71,6 +84,7 @@ export function StormFinale({ name, sound, onClose }: { name: string; sound: Sto
     strikeRef.current = (x, y) => {
       if (performance.now() - lastStrike < 1200) return;
       lastStrike = performance.now(); bolt = { x, y, born: performance.now() };
+      if (reduced) draw(performance.now());
     };
     const draw = (now: number) => {
       ctx.clearRect(0, 0, width, height);
@@ -86,15 +100,20 @@ export function StormFinale({ name, sound, onClose }: { name: string; sound: Sto
         ctx.beginPath(); ctx.moveTo(bolt.x - 70, 0);
         for (let i = 1; i <= 8; i++) ctx.lineTo(bolt.x + (i % 2 ? 28 : -28), bolt.y * i / 8);
         ctx.stroke();
+        ctx.lineWidth = 1.5;
+        for (let branch = 3; branch <= 6; branch++) {
+          const x = bolt.x + (branch % 2 ? 28 : -28), y = bolt.y * branch / 8;
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 55, y + 22); ctx.lineTo(x + 35, y + 45); ctx.lineTo(x + 90, y + 70); ctx.stroke();
+        }
       }
       ctx.globalAlpha = 1;
       if (!reduced) frame = requestAnimationFrame(draw);
     };
     draw(performance.now());
-    return () => { cancelAnimationFrame(frame); window.removeEventListener("resize", resize); };
-  }, []);
-  return createPortal(<div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Scene locked in" tabIndex={-1} className="storm-finale" onPointerDown={(e) => strikeRef.current(e.clientX, e.clientY)} onKeyDown={(e) => {
-    if (e.key === "Escape") onClose();
+    return () => { strikeRef.current = () => {}; cancelAnimationFrame(frame); window.removeEventListener("resize", resize); };
+  }, [phase]);
+  return createPortal(<div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Scene locked in" tabIndex={-1} className={`storm-finale storm-${phase}`} onPointerDown={(e) => { if (!(e.target instanceof Element) || !e.target.closest("button")) strikeRef.current(e.clientX, e.clientY); }} onKeyDown={(e) => {
+    if (e.key === "Escape") dismiss();
     if (e.key === "Tab") {
       const buttons = dialogRef.current?.querySelectorAll<HTMLButtonElement>("button");
       const first = buttons?.[0], last = buttons?.[buttons.length - 1];
@@ -104,11 +123,12 @@ export function StormFinale({ name, sound, onClose }: { name: string; sound: Sto
   }}>
     <img src={coverArt} alt="" className="storm-art" width={1536} height={1024} />
     <canvas ref={canvasRef} className="storm-canvas" aria-hidden="true" />
+    <div className="storm-lock-cue" role="status" aria-live="polite"><span className="storm-lock-mark"><Check size={36} /></span><p className="font-mono">LOCKED IN.</p><p className="storm-lock-name">{name}</p></div>
     <div className="storm-top"><span className="font-mono">SCENEKYAHAI / THE DECISION</span><div className="flex gap-2">
       <Button variant="ghost" size="icon" aria-label={muted ? "Unmute storm" : "Mute storm"} title={muted ? "Unmute storm" : "Mute storm"} onClick={() => { sound?.mute(!muted); setMuted(!muted); }}>{muted ? <VolumeX /> : <Volume2 />}</Button>
-      <Button variant="ghost" size="icon" aria-label="Close storm" title="Close storm" onClick={onClose}><X /></Button>
+      <Button variant="ghost" size="icon" aria-label="Close storm" title="Close storm" onClick={dismiss}><X /></Button>
     </div></div>
-    <div className="storm-copy"><p className="font-mono storm-eyebrow">PLAN LOCKED. BED REJECTED.</p><h1>Consider it<br /><span>decided.</span></h1><p className="storm-plan">{name}</p><p className="font-sign storm-sign">Your plot twist has arrived.</p><div className="mt-8 flex flex-wrap justify-center gap-3"><Button className="storm-continue h-12" onClick={onClose}>Your scene<ArrowRight /></Button><Button variant="outline" className="storm-strike h-12" onClick={() => strikeRef.current(innerWidth * .75, innerHeight * .6)}><Zap />One more thunderbolt</Button></div></div>
+    <div className="storm-copy" inert={phase !== "storm"}><p className="font-mono storm-eyebrow">PLAN LOCKED. BED REJECTED.</p><h1>Consider it<br /><span>decided.</span></h1><p className="storm-plan">{name}</p><p className="font-sign storm-sign">Your plot twist has arrived.</p><div className="mt-8 flex flex-wrap justify-center gap-3"><Button className="storm-continue h-12" onClick={dismiss}>Your scene<ArrowRight /></Button><Button variant="outline" className="storm-strike h-12" onClick={() => strikeRef.current(innerWidth * .75, innerHeight * .6)}><Zap />One more thunderbolt</Button><Button variant="ghost" className="storm-replay h-12" onClick={onReplay}><RotateCcw />Replay the storm</Button></div></div>
     <span className="storm-bottom font-mono">FT. AASHRAY / GO MAKE IT HAPPEN.</span>
   </div>, document.body);
 }
