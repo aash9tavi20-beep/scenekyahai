@@ -129,13 +129,15 @@ export const curate = createServerFn({ method: "POST" })
         lng: z.number(),
         label: z.string().max(100),
         previous: z.array(z.string().max(120)).max(9).default([]),
+        // UPI QR flow can't verify payment server-side; user confirms they paid.
+        paid: z.boolean().default(false),
       })
       .parse(d),
   )
   .handler(async ({ data }) => {
     // Free check first — never generate a paid curation without payment.
     const freeAvailable = (await usedCount(data.deviceId)) === 0;
-    if (!freeAvailable) {
+    if (!freeAvailable && !data.paid) {
       return { status: "payment_required" as const, price: PRICE_INR };
     }
 
@@ -260,8 +262,8 @@ Also "line": what you say when showing them, 1-4 words ("This works." "Okay. Opt
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("curations").insert({
       device_id: data.deviceId,
-      was_free: true,
-      price_inr: 0,
+      was_free: freeAvailable,
+      price_inr: freeAvailable ? 0 : PRICE_INR,
       summary: { area: data.label, plans: plans.map((p) => p.name) },
     });
     if (error) console.error("curation insert", error);
