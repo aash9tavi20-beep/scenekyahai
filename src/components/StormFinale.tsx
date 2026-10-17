@@ -23,9 +23,11 @@ export function startStormSound(): StormSound | null {
     }
     const source = context.createBufferSource();
     source.buffer = buffer;
+    source.loop = true;
     source.connect(master);
     source.start();
-    return { mute: (muted) => master.gain.setTargetAtTime(muted ? 0 : 0.32, context.currentTime, 0.08), stop: () => { void context.close(); } };
+    let stopped = false;
+    return { mute: (muted) => { if (!stopped) master.gain.setTargetAtTime(muted ? 0 : 0.32, context.currentTime, 0.08); }, stop: () => { if (stopped) return; stopped = true; void context.close().catch(() => {}); } };
   } catch { return null; }
 }
 
@@ -34,13 +36,16 @@ export function StormFinale({ name, sound, onClose }: { name: string; sound: Sto
   const dialogRef = useRef<HTMLDivElement>(null);
   const strikeRef = useRef<(x: number, y: number) => void>(() => {});
   const [muted, setMuted] = useState(false);
+  const cleanupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
+    if (cleanupTimer.current) clearTimeout(cleanupTimer.current);
     const before = document.activeElement;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     dialogRef.current?.focus();
     return () => {
-      sound?.stop(); document.body.style.overflow = overflow;
+      cleanupTimer.current = setTimeout(() => sound?.stop(), 0);
+      document.body.style.overflow = overflow;
       if (before instanceof HTMLElement) before.focus();
     };
   }, [sound]);
