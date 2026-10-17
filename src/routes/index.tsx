@@ -12,6 +12,9 @@ function deviceId() {
   return id;
 }
 import { PlanCards, type Plan } from "@/components/PlanCards";
+import upiQr from "@/assets/upi-qr.jpeg.asset.json";
+
+const UPI_LINK = "upi://pay?pa=aash9tavi20@oksbi&pn=MoveYourWay365&am=50&cu=INR&tn=MoveYourWay365%20curation";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -181,12 +184,12 @@ function Home() {
     );
   }
 
-  async function run(b: Brief, l: Loc, refine = false) {
+  async function run(b: Brief, l: Loc, refine = false, paid = false) {
     setStep("curating");
     setThinking(true);
     if (!refine) setTimeout(() => say("Give me a minute."), 250);
     try {
-      const r = await curateFn({ data: { deviceId: deviceId(), brief: b, lat: l.lat, lng: l.lng, label: l.label, previous: refine ? seen : [] } });
+      const r = await curateFn({ data: { deviceId: deviceId(), brief: b, lat: l.lat, lng: l.lng, label: l.label, previous: refine ? seen : [], paid } });
       setThinking(false);
       if (r.status === "ok") {
         setPlans(r.plans);
@@ -245,9 +248,19 @@ function Home() {
           {step === "intent" && <Chips options={["Food", "Something to do", "Surprise me"]} onPick={(v) => pick(v, "intent")} />}
           {step === "spend" && <Chips options={SPEND} onPick={(v) => pick(v, "spend")} />}
           {step === "paywall" && (
-            <div className="pop-in space-y-2">
-              <button disabled className="w-full bg-primary py-4 text-lg font-bold text-primary-foreground opacity-60">₹50 | Curate my experience</button>
-              <p className="font-mono text-xs text-muted-foreground">Payments aren't switched on yet. Nothing will be charged.</p>
+            <div className="pop-in space-y-3 border-2 border-foreground bg-card p-4">
+              <img src={upiQr.url} alt="UPI QR — scan to pay ₹50" className="mx-auto w-56 border-2 border-foreground" />
+              <p className="text-center font-mono text-xs text-muted-foreground">Scan with any UPI app · ₹50</p>
+              <a href={UPI_LINK} className="block w-full border-2 border-foreground bg-accent py-3 text-center font-extrabold text-accent-foreground">
+                Tap to pay ₹50
+              </a>
+              <button
+                disabled={thinking}
+                onClick={() => { say("Cool. Checking."); run(brief, loc!, false, true); }}
+                className="w-full bg-primary py-4 text-lg font-bold text-primary-foreground disabled:opacity-40"
+              >
+                I've paid — curate
+              </button>
             </div>
           )}
           {plans.length > 0 && (step === "results" || step === "curating") && <PlanCards plans={plans} />}
