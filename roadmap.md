@@ -1,4 +1,6 @@
 # SceneKyaHai refinement
+- [ ] Frame every question with varied enigmatic art and decorative sides.
+- [ ] Add and verify full-screen interactive thunderstorm on final confirmation.
 - [x] Repair missing Maps address-type crash; real Bengaluru plans, route times, fresh refinement and final selection verified; 12 tests pass.
 - [x] Remove reaction waits between questions; retained answers and legible desktop/mobile cover verified.
 - [x] Apply forest/coral/ivory/sage palette and abstract cover-first experience.
