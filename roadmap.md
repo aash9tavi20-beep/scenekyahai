@@ -1,4 +1,5 @@
 # SceneKyaHai refinement
+- [ ] Add brief lock-in cue, smooth storm entrance/dismissal and replay; verify the final confirmation flow.
 - [x] Repair final-screen visibility; real plan lock-in with feedback, desktop/mobile storm, dismissal and replay verified; 12 tests pass.
 - [x] Frame every question and refinement screen with varied enigmatic art; desktop/mobile artwork and clear inputs verified.
 - [x] Add full-screen interactive storm on final confirmation; real curation-to-finale flow, mute/unmute, lightning and dismissal verified without page errors.
