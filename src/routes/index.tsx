@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, MapPin, Sparkles, SlidersHorizontal, RotateCcw, Navigation, Coffee, Compass, Heart, Loader2 } from "lucide-react";
 import { react, locate, curate, refineBrief } from "@/lib/curate.functions";
 import { DISTANCES, EMPTY_BRIEF, type Brief, type DraftBrief } from "@/lib/scene";
@@ -14,9 +14,9 @@ import { StormFinale, startStormSound, type StormSound } from "@/components/Stor
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
-    { title: "SceneKyaHai — Here to curate your Taqdeer & your Bad-Decisions" },
+    { title: "SceneKyaHai? — Here to curate your Taqdeer & your Bad-Decisions" },
     { name: "description", content: "Find your scene across India. Mood-led experiences, your distance, your kind of day. Ft. Aashray." },
-    { property: "og:title", content: "SceneKyaHai — Ft. Aashray" },
+    { property: "og:title", content: "SceneKyaHai? — Ft. Aashray" },
     { property: "og:description", content: "Here to curate your Taqdeer & your Bad-Decisions. Personal experiences across India." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
   ] }), component: Home,
@@ -54,7 +54,17 @@ function Home() {
   const [finale, setFinale] = useState(false);
   const [finaleRun, setFinaleRun] = useState(0);
   const stormSound = useRef<StormSound | null>(null);
-  function go(next: Step) { setError(""); setStep(next); window.scrollTo({ top: 0, behavior: "instant" }); }
+  const resumeStep = useRef<Step>("mood");
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (step === "cover") return;
+    const frame = requestAnimationFrame(() => mainRef.current?.querySelector<HTMLElement>("h1")?.focus({ preventScroll: true }));
+    return () => cancelAnimationFrame(frame);
+  }, [step]);
+  function go(next: Step) {
+    if (next === "cover" && step !== "cover" && !busy) resumeStep.current = step;
+    setError(""); setStep(next); window.scrollTo({ top: 0, behavior: "instant" });
+  }
   function back() {
     let i = STEPS.indexOf(step) - 1;
     if (STEPS[i] === "craving" && brief.intent === "activity") i--;
@@ -67,7 +77,7 @@ function Home() {
       if (version !== reactionVersion.current) return null;
       setReply(r.reply); setHistory((h) => [...h, `U: ${text.slice(0, 280)}`, `A: ${r.reply.slice(0, 280)}`].slice(-20));
       return r;
-    } catch { setReply("Fair. Keep going."); return null; }
+    } catch { if (version === reactionVersion.current) setReply("Fair. Keep going."); return null; }
   }
   async function findLocation(current?: { lat: number; lng: number }) {
     setBusy(true); setError("");
@@ -96,6 +106,7 @@ function Home() {
     go(step === "intent" && brief.intent === "activity" ? "company" : STEPS[i + 1] ?? "distance");
   }
   async function run(b: Brief, l: Loc, refinement = false) {
+    reactionVersion.current++;
     setBrief(b); setPendingRefine(refinement); setBusy(true); go("curating");
     try {
       const r = await curateFn({ data: { deviceId: deviceId(), brief: b, lat: l.lat, lng: l.lng, label: l.label, previous: refinement ? seen : [] } });
@@ -106,6 +117,7 @@ function Home() {
   }
   async function refine() {
     if (!feedback.trim() || !brief.distance || !loc || busy) return;
+    reactionVersion.current++;
     setBusy(true); setError("");
     try {
       const r = await refineFn({ data: { brief: { ...brief, distance: brief.distance }, feedback: feedback.trim() } });
@@ -128,24 +140,24 @@ function Home() {
   const activePlan = plans.find((p) => p.label === selected);
   return <div className={`min-h-dvh bg-background scene-shell ${step === "cover" ? "cover-shell" : ""}`}>
     <header className="scene-header">
-      <Button variant="ghost" className="px-0 text-xl font-extrabold text-primary hover:bg-transparent" onClick={() => go("cover")}>SceneKyaHai<span className="text-secondary-foreground">.</span></Button>
+      <Button variant="ghost" disabled={busy} className="px-0 text-xl font-extrabold text-primary hover:bg-transparent" onClick={() => go("cover")}>SceneKyaHai<span className="text-secondary-foreground">?</span></Button>
       <div className="flex items-center gap-6"><span className="hidden text-xs text-muted-foreground sm:block">A LITTLE LESS THINKING. A LITTLE MORE LIVING.</span><span className="font-sign text-2xl text-primary">Ft. Aashray</span></div>
     </header>
     {(questionStep || step === "refine" || step === "satisfaction") && <QuestionArt stage={questionStep ? progress : step === "refine" ? 8 : 9} />}
     {step === "cover" ? <main className="scene-cover">
       <img className="cover-art" src={coverArt} alt="Mischievous abstract eyes, horned shapes and torn checkerboard paper" width={1536} height={1024} />
-      <div className="cover-copy pop-in"><p className="cover-eyebrow font-mono">GOOD SCENES. QUESTIONABLE DECISIONS.</p><h1>SceneKyaHai<span>?</span></h1><p className="cover-tagline">Here to curate your Taqdeer &amp; your Bad-Decisions</p><Button className="cover-start h-14 px-7 text-base" onClick={() => go("mood")}>Let's make questionable plans<ArrowRight /></Button><p className="cover-aside font-sign">Your bed has had enough of you.</p></div>
+      <div className="cover-copy pop-in"><p className="cover-eyebrow font-mono">GOOD SCENES. QUESTIONABLE DECISIONS.</p><h1>SceneKyaHai<span>?</span></h1><p className="cover-tagline">Here to curate your Taqdeer &amp; your Bad-Decisions</p><Button className="cover-start h-14 px-7 text-base" onClick={() => go(resumeStep.current)}>{brief.mood.trim() ? "Back to my scene" : "Let's make questionable plans"}<ArrowRight /></Button><p className="cover-aside font-sign">Your bed has had enough of you.</p></div>
       <div className="cover-bottom font-mono"><span>LESS OVERTHINKING. MORE PLOT.</span><span>FT. YOUR IMPULSE CONTROL.</span></div>
-    </main> : <main className={`scene-main ${questionStep ? "question-main" : ""}`}>
+    </main> : <main ref={mainRef} key={step} className={`scene-main flow-enter ${questionStep ? "question-main" : ""}`}>
       <div className={`art-strip ${(questionStep || step === "refine" || step === "satisfaction") ? `enigma-strip enigma-strip-${Math.max(progress, 0) % 4}` : ""}`} aria-hidden="true"><img src={(questionStep || step === "refine" || step === "satisfaction") ? enigmaArt : doodleArt} alt="" loading="lazy" width={768} height={1536} /><span className="font-mono">{questionStep ? `SCENE / 0${progress + 1}` : "THE PLOT THICKENS"}</span></div>
       {questionStep ? <>
         <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground"><span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" />YOUR SCENE, YOUR CALL</span><span>{progress + 1 - (brief.intent === "activity" && progress > 4 ? 1 : 0)} / {brief.intent === "activity" ? 7 : 8}</span></div>
         <div className="mt-3 flex gap-1.5" aria-label="Curation progress">{STEPS.filter((s) => s !== "craving" || brief.intent !== "activity").map((s) => <span key={s} className={`h-1 flex-1 rounded-full ${STEPS.indexOf(s) <= progress ? "bg-primary" : "bg-border"}`} />)}</div>
-        <section key={step} className="step-content pop-in">
+        <section key={step} className="step-content">
           {step === "mood" && <><p className="mb-5 text-sm font-medium text-primary">Here to curate your Taqdeer &amp; your Bad-Decisions</p><h1 className="scene-heading">{QUESTIONS.mood}</h1><p className="mt-4 text-muted-foreground">Bored? Confused? Had a day? Spill it out.</p></>}
           {step !== "mood" && <><p className="mb-4 font-sign text-2xl text-primary">{reply}</p><h1 className="scene-heading">{QUESTIONS[step as keyof typeof QUESTIONS]}</h1></>}
           {step === "mood" && <><textarea aria-label="Your mood" className="scene-input mt-6 min-h-28" maxLength={500} value={brief.mood} onChange={(e) => setBrief({ ...brief, mood: e.target.value })} placeholder="Spill it out." /><div className="mt-3 flex flex-wrap gap-2">{["My bed thinks we’re exclusive", "Today owes me an apology", "One bad decision, please"].map((m, i) => { const Icon = [Coffee, Heart, Compass][i] ?? Compass; return <Button key={m} variant="secondary" className="h-auto whitespace-normal px-3 py-2 text-xs" onClick={() => setBrief({ ...brief, mood: m })}><Icon />{m}</Button>; })}</div></>}
-          {step === "location" && <><p className="mt-4 text-muted-foreground">An area and city. India only, for now.</p><Button variant="secondary" className="mt-6 h-12 w-full" disabled={busy} onClick={useLocation}><Navigation />Find me. Not in a creepy way.</Button><div className="my-4 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />OR<span className="h-px flex-1 bg-border" /></div><input aria-label="Starting location" className="scene-input" placeholder="Area, city…" value={address} maxLength={200} onChange={(e) => setAddress(e.target.value)} />{loc && <p className="mt-3 flex items-center gap-2 text-sm text-primary"><MapPin size={15} />{loc.label}</p>}</>}
+          {step === "location" && <><p className="mt-4 text-muted-foreground">An area and city. India only, for now.</p><Button variant="secondary" className="mt-6 h-12 w-full" disabled={busy} onClick={useLocation}><Navigation />{busy ? "Finding your starting point…" : "Find me. Not in a creepy way."}</Button><div className="my-4 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />OR<span className="h-px flex-1 bg-border" /></div><input aria-label="Starting location" className="scene-input" placeholder="Area, city…" value={address} disabled={busy} maxLength={200} onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing && canNext && !busy) { e.preventDefault(); void next(); } }} onChange={(e) => setAddress(e.target.value)} />{loc && <p className="mt-3 flex items-center gap-2 text-sm text-primary"><MapPin size={15} />{loc.label}</p>}</>}
           {step === "when" && <><p className="mt-4 text-muted-foreground">Later slots mean the next occurrence. We'll check the hours.</p><Choices options={["Now", "Morning", "Afternoon", "Evening", "Night"]} value={brief.when} onSelect={(when) => setBrief({ ...brief, when })} /></>}
           {step === "intent" && <Choices options={["Food", "Something to do", "Surprise me"]} value={brief.intent === "food" ? "Food" : brief.intent === "activity" ? "Something to do" : brief.intent === "either" ? "Surprise me" : ""} onSelect={(v) => setBrief({ ...brief, intent: v === "Food" ? "food" : v === "Something to do" ? "activity" : "either" })} />}
           {step === "craving" && <><p className="mt-4 text-muted-foreground">Spicy, sweet, absolutely not another café. Your call.</p><textarea aria-label="Cuisine and craving" className="scene-input mt-6 min-h-28" placeholder="Something spicy…" value={brief.craving} maxLength={300} onChange={(e) => setBrief({ ...brief, craving: e.target.value })} /><p className="mt-2 text-xs text-muted-foreground">No particular craving? Keep going.</p></>}
@@ -164,7 +176,7 @@ function Home() {
         {(step === "refine" || step === "satisfaction") && <section className="mx-auto max-w-2xl py-6"><Button variant="ghost" className="mb-6 pl-0" onClick={() => go("results")}><ArrowLeft />Your options</Button><h1 className="scene-heading">{step === "refine" ? "Not quite the scene?" : "So, have we found your scene?"}</h1><p className="mt-4 text-muted-foreground">{step === "refine" ? "Tell me what's missing. We'll fix the scene before you give up and return to your bed." : "Are we finally leaving the house, or are we going back to the drawing board?"}</p>{step === "refine" && <div className="mt-6 flex flex-wrap gap-2">{REFINEMENTS.map((r) => <Button key={r} variant={feedback.includes(r) ? "secondary" : "outline"} className="h-auto whitespace-normal py-2" onClick={() => setFeedback((f) => f.includes(r) ? f : [f, r].filter(Boolean).join(". "))}>{r}</Button>)}</div>}<textarea aria-label="Scene feedback" className="scene-input mt-6 min-h-32" maxLength={500} value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder={step === "refine" ? "Something more peaceful, but not another café…" : "Anything else I should know? Be specific. I'm listening."} />{error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}{step === "refine" ? <Button className="mt-5 h-12 w-full" disabled={busy || !feedback.trim()} onClick={() => void refine()}>{busy ? <Loader2 className="animate-spin" /> : <Sparkles />}Refine My Scene</Button> : <div className="mt-5 grid gap-3"><label className="text-sm font-medium" htmlFor="chosen-plan">Which scene are you taking?</label><select id="chosen-plan" className="scene-input" value={selected ?? ""} onChange={(e) => setSelected(e.target.value || null)}><option value="">Choose a plan</option>{plans.map((p) => <option key={p.label} value={p.label}>Plan {p.label} · {p.name}</option>)}</select><Button className="h-12" onClick={sorted}><Check />We're sorted.</Button><Button variant="secondary" className="h-12" onClick={() => go("refine")}>Almost. One more tweak.</Button><Button variant="outline" className="h-12" onClick={() => { if (feedback.trim()) setBrief((b) => ({ ...b, notes: [...b.notes, feedback.trim()].slice(-12) })); go("distance"); }}>Absolutely not. Start again.<RotateCcw /></Button>{feedback.trim() && <Button variant="link" disabled={busy} onClick={() => void refine()}>Use my feedback &amp; refine</Button>}</div>}</section>}
       </>}
     </main>}
-    <footer className="scene-footer"><span>SceneKyaHai. A scene, not an itinerary.</span><span>INDIA, FOR NOW. <span className="text-primary">YOUR CALL, ALWAYS.</span></span></footer>
+    <footer className="scene-footer"><span>SceneKyaHai? A scene, not an itinerary.</span><span>INDIA, FOR NOW. <span className="text-primary">YOUR CALL, ALWAYS.</span></span></footer>
     {step === "results" && activePlan && <div className="scene-lock-bar"><span className="min-w-0 text-sm">Plan {activePlan.label} · {activePlan.name}</span><Button className="h-12 shrink-0" onClick={() => go("satisfaction")}><Check />Lock this scene<ArrowRight /></Button></div>}
     {step === "sorted" && activePlan && <div className="scene-lock-bar"><span className="min-w-0 text-sm">Plan {activePlan.label} · Locked in.</span><Button className="h-12" onClick={replayStorm}><RotateCcw />Replay the storm</Button></div>}
     {finale && activePlan && <StormFinale key={finaleRun} name={activePlan.name} sound={stormSound.current} onReplay={replayStorm} onClose={() => { stormSound.current?.stop(); setFinale(false); }} />}
