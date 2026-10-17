@@ -8,6 +8,9 @@ import { PlanCards, type Plan } from "@/components/PlanCards";
 import { Button } from "@/components/ui/button";
 import coverArt from "@/assets/scene-cover.jpg";
 import doodleArt from "@/assets/scene-doodles.jpg";
+import enigmaArt from "@/assets/question-enigmas.jpg";
+import { QuestionArt } from "@/components/QuestionArt";
+import { StormFinale, startStormSound, type StormSound } from "@/components/StormFinale";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
@@ -48,6 +51,8 @@ function Home() {
   const [history, setHistory] = useState<string[]>([]), [plans, setPlans] = useState<Plan[]>([]), [seen, setSeen] = useState<string[]>([]), [feedback, setFeedback] = useState(""), [selected, setSelected] = useState<string | null>(null), [pendingRefine, setPendingRefine] = useState(false);
   const questionStep = STEPS.includes(step), progress = STEPS.indexOf(step);
   const reactionVersion = useRef(0);
+  const [finale, setFinale] = useState(false);
+  const stormSound = useRef<StormSound | null>(null);
   function go(next: Step) { setError(""); setStep(next); window.scrollTo({ top: 0, behavior: "instant" }); }
   function back() {
     let i = STEPS.indexOf(step) - 1;
@@ -110,6 +115,7 @@ function Home() {
   function sorted() {
     if (!selected) { setError("Pick the plan you're taking first."); return; }
     if (feedback.trim()) { go("refine"); return; }
+    stormSound.current = startStormSound(); setFinale(true);
     setReply("Sorted. Go make it happen."); go("sorted");
   }
   const canNext = step === "mood" ? !!brief.mood.trim() : step === "location" ? address.trim().length >= 2 : step === "intent" ? !!brief.intent : step === "spend" ? !!brief.spend : step === "distance" ? !!brief.distance : true;
@@ -119,12 +125,13 @@ function Home() {
       <Button variant="ghost" className="px-0 text-xl font-extrabold text-primary hover:bg-transparent" onClick={() => go("cover")}>SceneKyaHai<span className="text-secondary-foreground">.</span></Button>
       <div className="flex items-center gap-6"><span className="hidden text-xs text-muted-foreground sm:block">A LITTLE LESS THINKING. A LITTLE MORE LIVING.</span><span className="font-sign text-2xl text-primary">Ft. Aashray</span></div>
     </header>
+    {(questionStep || step === "refine" || step === "satisfaction") && <QuestionArt stage={questionStep ? progress : step === "refine" ? 8 : 9} />}
     {step === "cover" ? <main className="scene-cover">
       <img className="cover-art" src={coverArt} alt="Mischievous abstract eyes, horned shapes and torn checkerboard paper" width={1536} height={1024} />
       <div className="cover-copy pop-in"><p className="cover-eyebrow font-mono">GOOD SCENES. QUESTIONABLE DECISIONS.</p><h1>SceneKyaHai<span>?</span></h1><p className="cover-tagline">Here to curate your Taqdeer &amp; your Bad-Decisions</p><Button className="cover-start h-14 px-7 text-base" onClick={() => go("mood")}>Let's make questionable plans<ArrowRight /></Button><p className="cover-aside font-sign">Your bed has had enough of you.</p></div>
       <div className="cover-bottom font-mono"><span>LESS OVERTHINKING. MORE PLOT.</span><span>FT. YOUR IMPULSE CONTROL.</span></div>
     </main> : <main className={`scene-main ${questionStep ? "question-main" : ""}`}>
-      <div className="art-strip" aria-hidden="true"><img src={doodleArt} alt="" loading="lazy" width={1536} height={512} /><span className="font-mono">{questionStep ? `SCENE / 0${progress + 1}` : "THE PLOT THICKENS"}</span></div>
+      <div className={`art-strip ${(questionStep || step === "refine" || step === "satisfaction") ? `enigma-strip enigma-strip-${Math.max(progress, 0) % 4}` : ""}`} aria-hidden="true"><img src={(questionStep || step === "refine" || step === "satisfaction") ? enigmaArt : doodleArt} alt="" loading="lazy" width={768} height={1536} /><span className="font-mono">{questionStep ? `SCENE / 0${progress + 1}` : "THE PLOT THICKENS"}</span></div>
       {questionStep ? <>
         <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground"><span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" />YOUR SCENE, YOUR CALL</span><span>{progress + 1 - (brief.intent === "activity" && progress > 4 ? 1 : 0)} / {brief.intent === "activity" ? 7 : 8}</span></div>
         <div className="mt-3 flex gap-1.5" aria-label="Curation progress">{STEPS.filter((s) => s !== "craving" || brief.intent !== "activity").map((s) => <span key={s} className={`h-1 flex-1 rounded-full ${STEPS.indexOf(s) <= progress ? "bg-primary" : "bg-border"}`} />)}</div>
@@ -152,6 +159,7 @@ function Home() {
       </>}
     </main>}
     <footer className="scene-footer"><span>SceneKyaHai. A scene, not an itinerary.</span><span>INDIA, FOR NOW. <span className="text-primary">YOUR CALL, ALWAYS.</span></span></footer>
+    {finale && activePlan && <StormFinale name={activePlan.name} sound={stormSound.current} onClose={() => setFinale(false)} />}
   </div>;
 }
 function Choices({ options, value, onSelect }: { options: string[]; value: string; onSelect: (v: string) => void }) {

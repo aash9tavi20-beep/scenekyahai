@@ -149,3 +149,45 @@ body { letter-spacing: 0; }
  .art-strip { height: 80px; margin-bottom: 22px; }
  .step-content { margin-top: 24px; }
 }
+
+/* Art lives in the margins; the reading and answering area stays clear. */
+.question-art { position: absolute; inset: 110px 0 auto; height: min(850px, 90vh); overflow: hidden; pointer-events: none; z-index: -1; }
+.question-art-left, .question-art-right { position: absolute; width: max(120px, calc((100% - 800px) / 2)); height: 100%; overflow: hidden; }
+.question-art-left { left: 0; }
+.question-art-right { right: 0; }
+.question-art img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; opacity: .85; }
+.question-art-left img { object-position: 15% 20%; transform: rotate(-8deg) scale(1.12); }
+.question-art-right img { object-position: 80% 75%; transform: rotate(8deg) scale(1.12); }
+.question-art-1 img { transform: scale(1.5); object-position: 50% 30%; }
+.question-art-2 img { transform: scale(1.15) rotate(180deg); object-position: 15% 80%; }
+.question-art-3 img { transform: scale(1.35) scaleX(-1); object-position: 80% 55%; }
+.enigma-strip { height: 128px; }
+.enigma-strip img { object-position: 50% 10%; }
+.enigma-strip-1 img { object-position: 50% 36%; }
+.enigma-strip-2 img { object-position: 50% 62%; }
+.enigma-strip-3 img { object-position: 50% 85%; }
+@media (max-width: 1000px) { .question-art-left, .question-art-right { width: 40px; opacity: .35; } }
+@media (max-width: 640px) { .question-art { top: 90px; height: 900px; } .question-art-left, .question-art-right { width: 16px; opacity: .6; } .enigma-strip { height: 100px; } }
+
+.storm-finale { position: fixed; inset: 0; z-index: 100; background: var(--cover); color: var(--cover-foreground); isolation: isolate; display: flex; flex-direction: column; justify-content: center; overflow: auto; animation: storm-reveal .65s ease-out both; }
+.storm-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .2; pointer-events: none; }
+.storm-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.storm-top { position: absolute; top: 24px; left: 4%; right: 4%; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; font-size: 11px; }
+.storm-top > span { min-width: 0; }
+.storm-top button { color: var(--cover-foreground); }
+.storm-top button:hover { background: var(--secondary); color: var(--cover); }
+.storm-copy { position: relative; max-width: 900px; margin: auto; padding: 110px 24px; text-align: center; pointer-events: none; }
+.storm-copy button { pointer-events: auto; }
+.storm-eyebrow { color: var(--secondary); font-size: 12px; margin-bottom: 28px; }
+.storm-copy h1 { font-size: 100px; line-height: 1.02; font-weight: 800; }
+.storm-copy h1 span { color: var(--coral); }
+.storm-plan { margin: 28px auto 0; max-width: 650px; font-size: 24px; overflow-wrap: anywhere; }
+.storm-sign { font-size: 28px; color: var(--secondary); margin-top: 14px; }
+.storm-continue { background: var(--coral); color: var(--cover); }
+.storm-continue:hover { background: var(--secondary); color: var(--cover); }
+.storm-strike { background: transparent; border-color: var(--secondary); color: var(--cover-foreground); }
+.storm-strike:hover { background: var(--secondary); color: var(--cover); }
+.storm-bottom { position: absolute; bottom: 24px; left: 0; right: 0; text-align: center; color: var(--secondary); font-size: 10px; }
+@keyframes storm-reveal { from { clip-path: circle(0% at 50% 70%); } to { clip-path: circle(150% at 50% 70%); } }
+@media (max-width: 640px) { .storm-copy h1 { font-size: 54px; } .storm-plan { font-size: 20px; } .storm-top { top: 16px; font-size: 9px; } .storm-copy { padding: 96px 20px; } }
+@media (prefers-reduced-motion: reduce) { .storm-finale { animation: none; } }
