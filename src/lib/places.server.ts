@@ -77,11 +77,6 @@ export function reverseLocation(loc: LatLng): Promise<LocationLookup> {
   return lookupLocation(`latlng=${loc.lat},${loc.lng}`, "your area");
 }
 
-export async function reverseLabel(loc: LatLng): Promise<string | null> {
-  const result = await reverseLocation(loc);
-  return result.ok ? result.label : null;
-}
-
 export type Place = {
   id: string;
   name: string;
@@ -128,8 +123,10 @@ export async function searchPlaces(query: string, center: LatLng, radiusKm: numb
     }),
   });
   if (!r.ok) {
-    console.error("places", r.status, await r.text());
-    return [];
+    const body = await r.text();
+    if (r.status === 403) console.error("Google Maps Places denied; check the server key restrictions", body);
+    else console.error("Google Maps Places request failed", r.status, body);
+    throw new Error(`Places search failed (${r.status})`);
   }
   type Raw = {
     id: string;

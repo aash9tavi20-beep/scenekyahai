@@ -1,4 +1,5 @@
 # SceneKyaHai refinement
+- [x] Audit every location touchpoint from entry through curation, maps and saved summaries; removed masked geocoding/search failures and unauthorized map requests; 20 tests pass.
 - [x] Trace and repair manual and automatic location lookup; real Google Maps responses, invalid/foreign addresses, permission denial and service failures verified without design changes; 16 tests pass.
 - [x] Make SceneKyaHai? consistent; smooth transitions, heading focus, Enter-to-locate and retained-step resume verified with a real India location; 12 tests pass.
 - [x] Add brief lock-in cue, smooth storm entrance/dismissal and separate replay; real confirmation with feedback, both replay controls, mute, lightning, dismissal and reduced-motion mobile verified without page errors; 12 tests pass.

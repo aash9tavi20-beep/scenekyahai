@@ -136,9 +136,13 @@ export const curate = createServerFn({ method: "POST" })
     const freeAvailable = successfulCurations === 0;
 
     const { aiJson, AASHRAY_VOICE } = await import("./ai.server");
-    const { searchPlaces, reverseLabel, travelDetails } = await import("./places.server");
+    const { searchPlaces, reverseLocation, travelDetails } = await import("./places.server");
     const center = { lat: round(data.lat), lng: round(data.lng) };
-    if (!(await reverseLabel(center))) return { status: "empty" as const, message: "India only for now. Pick a starting spot here." };
+    const startingPoint = await reverseLocation(center);
+    if (!startingPoint.ok) {
+      if (startingPoint.reason === "unavailable") return { status: "failed" as const, message: "Google Maps couldn't confirm your starting point. Try again in a moment." };
+      return { status: "empty" as const, message: startingPoint.reason === "outside_india" ? "India only for now. Pick a starting spot here." : "Couldn't confirm that starting point. Try another area and city." };
+    }
     const b = data.brief;
     const briefText = `Mood: ${b.mood}\nWants: ${b.intent ?? "unclear"}\nCraving: ${b.craving || "-"}\nWhen: ${b.when || "now"}\nCompany: ${b.company || "-"}\nSpend: ${b.spend || "-"}\nRefinements: ${b.notes.join("; ") || "-"}\nDistance: ${b.distance === "extended" ? "Intercity/interstate within India; consider transport and feasibility, not an arbitrary 60 km cap" : `Hard maximum ${b.distance} km`}\nTransport: ${b.transport}\nArea: ${data.label}, India\nAvoid repeating: ${data.previous.join(", ") || "-"}`;
 
@@ -163,6 +167,7 @@ export const curate = createServerFn({ method: "POST" })
 
     const barrier = b.distance === "extended" ? null : Number(b.distance);
     const searches = await Promise.allSettled([queries.a, queries.b, queries.c].map((q) => searchPlaces(q, center, barrier, b.when || "Now")));
+    if (searches.every((result) => result.status === "rejected")) return { status: "failed" as const, message: "Google Maps couldn't search this area. Try again in a moment." };
     let pool = searches.map((result) => {
       if (result.status === "fulfilled") return result.value;
       console.error("curation place search failed", result.reason);

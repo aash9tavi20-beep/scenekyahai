@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
-import { parseGeocode } from "./places.server";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { parseGeocode, searchPlaces } from "./places.server";
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
 
 const indiaResult = {
   status: "OK",
@@ -45,5 +50,14 @@ describe("location lookup results", () => {
       results: [{ geometry: { location: { lat: 27.7, lng: 85.3 } }, address_components: [{ short_name: "NP", types: ["country"] }] }],
     }, "fallback")).toEqual({ ok: false, reason: "outside_india" });
     expect(parseGeocode({ status: "OK", results: [{ address_components: [{ long_name: "Unknown" }] }] }, "fallback")).toEqual({ ok: false, reason: "not_found" });
+  });
+});
+
+describe("place search failures", () => {
+  it("throws a provider failure instead of pretending the area has no venues", async () => {
+    vi.stubEnv("LOVABLE_API_KEY", "test-gateway-key");
+    vi.stubEnv("GOOGLE_MAPS_API_KEY", "test-connection-key");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("temporarily unavailable", { status: 503 })));
+    await expect(searchPlaces("cafés in Indiranagar", { lat: 12.98, lng: 77.64 }, 5, "Now")).rejects.toThrow("Places search failed (503)");
   });
 });
