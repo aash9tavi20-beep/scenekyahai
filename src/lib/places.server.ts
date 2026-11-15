@@ -14,43 +14,72 @@ function headers(extra: Record<string, string> = {}) {
 }
 
 export type LatLng = { lat: number; lng: number };
+export type LocationFailure = "not_found" | "outside_india" | "unavailable";
+export type LocationLookup =
+  | { ok: true; loc: LatLng; label: string }
+  | { ok: false; reason: LocationFailure };
 
-export async function geocode(address: string): Promise<{ loc: LatLng; label: string } | null> {
-  const r = await fetch(
-    `${GATEWAY}/maps/api/geocode/json?address=${encodeURIComponent(address)}&components=country:IN&region=in`,
-    { headers: headers() },
-  );
-  if (!r.ok) {
-    console.error("geocode", r.status, await r.text());
-    return null;
+type GeocodePayload = {
+  status?: string;
+  error_message?: string;
+  results?: {
+    geometry?: { location?: LatLng };
+    formatted_address?: string;
+    types?: string[];
+    address_components?: { long_name?: string; short_name?: string; shortText?: string; types?: string[] }[];
+  }[];
+};
+
+export function parseGeocode(payload: GeocodePayload, fallbackLabel: string): LocationLookup {
+  if (payload.status === "ZERO_RESULTS") return { ok: false, reason: "not_found" };
+  if (payload.status && payload.status !== "OK") return { ok: false, reason: "unavailable" };
+  const first = payload.results?.[0];
+  if (!first) return { ok: false, reason: "not_found" };
+  if (first.types?.length && first.types.every((type) => type === "country" || type === "political")) return { ok: false, reason: "not_found" };
+  const components = first.address_components ?? [];
+  const country = components.find((component) => component.types?.includes("country"));
+  if (country && (country.short_name ?? country.shortText) !== "IN") return { ok: false, reason: "outside_india" };
+  if (!isIndia(components)) return { ok: false, reason: "not_found" };
+  const location = first.geometry?.location;
+  if (!location || !Number.isFinite(location.lat) || !Number.isFinite(location.lng)) return { ok: false, reason: "not_found" };
+  const label =
+    components.find((component) => component.types?.includes("sublocality"))?.long_name ??
+    components.find((component) => component.types?.includes("locality"))?.long_name ??
+    first.formatted_address?.split(",")[0] ??
+    fallbackLabel;
+  return { ok: true, loc: location, label };
+}
+
+async function lookupLocation(query: string, fallbackLabel: string): Promise<LocationLookup> {
+  try {
+    const response = await fetch(`${GATEWAY}/maps/api/geocode/json?${query}`, { headers: headers() });
+    if (!response.ok) {
+      const body = await response.text();
+      if (response.status === 403) console.error("Google Maps geocoding denied; check the server key restrictions", body);
+      else console.error("Google Maps geocoding request failed", response.status, body);
+      return { ok: false, reason: "unavailable" };
+    }
+    const payload = (await response.json()) as GeocodePayload;
+    const result = parseGeocode(payload, fallbackLabel);
+    if (!result.ok && result.reason === "unavailable") console.error("Google Maps geocoding provider error", payload.status, payload.error_message);
+    return result;
+  } catch (error) {
+    console.error("Google Maps geocoding request threw", error);
+    return { ok: false, reason: "unavailable" };
   }
-  const j = (await r.json()) as {
-    results?: { geometry: { location: LatLng }; formatted_address: string; address_components: { long_name: string; short_name: string; types: string[] }[] }[];
-  };
-  const first = j.results?.[0];
-  if (!first || !isIndia(first.address_components)) return null;
-  const locality =
-    first.address_components.find((c) => c.types?.includes("sublocality"))?.long_name ??
-    first.address_components.find((c) => c.types?.includes("locality"))?.long_name ??
-    first.formatted_address.split(",")[0];
-  return { loc: first.geometry.location, label: locality ?? address };
+}
+
+export function geocode(address: string): Promise<LocationLookup> {
+  return lookupLocation(`address=${encodeURIComponent(address)}&region=in`, address);
+}
+
+export function reverseLocation(loc: LatLng): Promise<LocationLookup> {
+  return lookupLocation(`latlng=${loc.lat},${loc.lng}`, "your area");
 }
 
 export async function reverseLabel(loc: LatLng): Promise<string | null> {
-  const r = await fetch(`${GATEWAY}/maps/api/geocode/json?latlng=${loc.lat},${loc.lng}`, {
-    headers: headers(),
-  });
-  if (!r.ok) return null;
-  const j = (await r.json()) as {
-    results?: { address_components: { long_name: string; short_name: string; types: string[] }[] }[];
-  };
-  const comps = j.results?.[0]?.address_components ?? [];
-  if (!isIndia(comps)) return null;
-  return (
-    comps.find((c) => c.types?.includes("sublocality"))?.long_name ??
-    comps.find((c) => c.types?.includes("locality"))?.long_name ??
-    "your area"
-  );
+  const result = await reverseLocation(loc);
+  return result.ok ? result.label : null;
 }
 
 export type Place = {

@@ -67,17 +67,17 @@ export const locate = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    const { geocode, reverseLabel } = await import("./places.server");
-    if ("address" in data) {
-      const g = await geocode(data.address);
-      if (!g) return { ok: false as const };
+    try {
+      const { geocode, reverseLocation } = await import("./places.server");
+      const rounded = "address" in data ? null : { lat: round(data.lat), lng: round(data.lng) };
+      const result = "address" in data ? await geocode(data.address) : await reverseLocation(rounded!);
+      if (!result.ok) return { ok: false as const, reason: result.reason };
       // Round to ~1km so we never hold precise location.
-      return { ok: true as const, label: g.label, lat: round(g.loc.lat), lng: round(g.loc.lng) };
+      return { ok: true as const, label: result.label, lat: round(result.loc.lat), lng: round(result.loc.lng) };
+    } catch (error) {
+      console.error("Location lookup failed", error);
+      return { ok: false as const, reason: "unavailable" as const };
     }
-    const rounded = { lat: round(data.lat), lng: round(data.lng) };
-    const label = await reverseLabel(rounded);
-    if (!label) return { ok: false as const };
-    return { ok: true as const, label, lat: round(data.lat), lng: round(data.lng) };
   });
 
 function round(n: number) {

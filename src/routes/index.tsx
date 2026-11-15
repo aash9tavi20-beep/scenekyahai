@@ -87,15 +87,27 @@ function Home() {
     setBusy(true); setError("");
     try {
       const r = await locateFn({ data: current ?? { address: address.trim() } });
-      if (!r.ok) { setError("Couldn't place that in India. Try an area and city."); return; }
+      if (!r.ok) {
+        setError(r.reason === "outside_india" ? "India only for now. Choose an area and city in India." : r.reason === "unavailable" ? "Google Maps couldn't check that location. Try again in a moment." : "Couldn't find that area in India. Try an area and city, like Indiranagar, Bengaluru.");
+        return;
+      }
       setLoc({ label: r.label, lat: r.lat, lng: r.lng }); setAddress(r.label); setReply("Cool. Now we've got a starting point."); go("when");
-    } catch { setError("Location took a detour. Try again."); }
-    finally { setBusy(false); }
+    } catch (error) {
+      console.error("Location request failed", error);
+      setError("Couldn't reach the location service. Check your connection and try again.");
+    } finally { setBusy(false); }
   }
   function useLocation() {
-    if (!navigator.geolocation) { setError("Type your area instead."); return; }
+    if (!navigator.geolocation) { setError("This browser can't detect your location. Type your area and city instead."); return; }
     setBusy(true); setError("");
-    navigator.geolocation.getCurrentPosition((p) => { void findLocation({ lat: Math.round(p.coords.latitude * 100) / 100, lng: Math.round(p.coords.longitude * 100) / 100 }); }, () => { setBusy(false); setError("No worries. Type your area instead."); }, { timeout: 10000, maximumAge: 600000 });
+    navigator.geolocation.getCurrentPosition(
+      (p) => { void findLocation({ lat: Math.round(p.coords.latitude * 100) / 100, lng: Math.round(p.coords.longitude * 100) / 100 }); },
+      (error) => {
+        setBusy(false);
+        setError(error.code === error.PERMISSION_DENIED ? "Location permission is off. Allow it in your browser settings, or type your area and city." : error.code === error.TIMEOUT ? "Your device took too long to find you. Try again, or type your area and city." : "Your device couldn't find you. Type your area and city instead.");
+      },
+      { timeout: 10000, maximumAge: 600000 },
+    );
   }
   async function next() {
     if (busy) return;
@@ -161,7 +173,7 @@ function Home() {
           {step === "mood" && <><p className="mb-5 text-sm font-medium text-primary">Here to curate your Taqdeer &amp; your Bad-Decisions</p><h1 className="scene-heading">{QUESTIONS.mood}</h1><p className="mt-4 text-muted-foreground">Bored? Confused? Had a day? Spill it out.</p></>}
           {step !== "mood" && <><p className="mb-4 font-sign text-2xl text-primary">{reply}</p><h1 className="scene-heading">{QUESTIONS[step as keyof typeof QUESTIONS]}</h1></>}
           {step === "mood" && <><textarea aria-label="Your mood" className="scene-input mt-6 min-h-28" maxLength={500} value={brief.mood} onChange={(e) => setBrief({ ...brief, mood: e.target.value })} placeholder="Spill it out." /><div className="mt-3 flex flex-wrap gap-2">{["My bed thinks we’re exclusive", "Today owes me an apology", "One bad decision, please"].map((m, i) => { const Icon = [Coffee, Heart, Compass][i] ?? Compass; return <Button key={m} variant="secondary" className="h-auto whitespace-normal px-3 py-2 text-xs" onClick={() => setBrief({ ...brief, mood: m })}><Icon />{m}</Button>; })}</div></>}
-          {step === "location" && <><p className="mt-4 text-muted-foreground">An area and city. India only, for now.</p><Button variant="secondary" className="mt-6 h-12 w-full" disabled={busy} onClick={useLocation}><Navigation />{busy ? "Finding your starting point…" : "Find me. Not in a creepy way."}</Button><div className="my-4 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />OR<span className="h-px flex-1 bg-border" /></div><input aria-label="Starting location" className="scene-input" placeholder="Area, city…" value={address} disabled={busy} maxLength={200} onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing && canNext && !busy) { e.preventDefault(); void next(); } }} onChange={(e) => setAddress(e.target.value)} />{loc && <p className="mt-3 flex items-center gap-2 text-sm text-primary"><MapPin size={15} />{loc.label}</p>}</>}
+          {step === "location" && <><p className="mt-4 text-muted-foreground">An area and city. India only, for now.</p><Button variant="secondary" className="mt-6 h-12 w-full" disabled={busy} onClick={useLocation}><Navigation />{busy ? "Finding your starting point…" : "Find me. Not in a creepy way."}</Button><div className="my-4 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />OR<span className="h-px flex-1 bg-border" /></div><input aria-label="Starting location" className="scene-input" placeholder="Area, city…" value={address} disabled={busy} maxLength={200} onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing && canNext && !busy) { e.preventDefault(); void next(); } }} onChange={(e) => { setAddress(e.target.value); if (loc && e.target.value !== loc.label) setLoc(null); }} />{loc && <p className="mt-3 flex items-center gap-2 text-sm text-primary"><MapPin size={15} />{loc.label}</p>}</>}
           {step === "when" && <><p className="mt-4 text-muted-foreground">Later slots mean the next occurrence. We'll check the hours.</p><Choices options={["Now", "Morning", "Afternoon", "Evening", "Night"]} value={brief.when} onSelect={(when) => setBrief({ ...brief, when })} /></>}
           {step === "intent" && <Choices options={["Food", "Something to do", "Surprise me"]} value={brief.intent === "food" ? "Food" : brief.intent === "activity" ? "Something to do" : brief.intent === "either" ? "Surprise me" : ""} onSelect={(v) => setBrief({ ...brief, intent: v === "Food" ? "food" : v === "Something to do" ? "activity" : "either" })} />}
           {step === "craving" && <><p className="mt-4 text-muted-foreground">Spicy, sweet, absolutely not another café. Your call.</p><textarea aria-label="Cuisine and craving" className="scene-input mt-6 min-h-28" placeholder="Something spicy…" value={brief.craving} maxLength={300} onChange={(e) => setBrief({ ...brief, craving: e.target.value })} /><p className="mt-2 text-xs text-muted-foreground">No particular craving? Keep going.</p></>}
